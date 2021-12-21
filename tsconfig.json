@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "lib": ["es6", "dom"],
+    "module": "commonjs",
+    "noImplicitReturns": true,
+    "outDir": "build/functions",
+    "sourceMap": false,
+    "target": "es5",
+    "declaration": false,
+    "jsx": "react",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strictNullChecks": true,
+    "downlevelIteration": true
+  },
+  "include": ["src/**/*", "tools/**/*"],
+  "exclude": []
+}
