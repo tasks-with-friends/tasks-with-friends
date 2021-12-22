@@ -123,3 +123,6 @@ src/build-info.ts
 
 # Netlify output
 .netlify/
+
+# Secrets
+*secrets.*
