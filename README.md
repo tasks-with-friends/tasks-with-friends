@@ -1,4 +1,4 @@
-[![master](https://github.com/skonves/tasks-with-friends/workflows/build/badge.svg?branch=master&amp;event=push)](https://github.com/skonves/tasks-with-friends/actions?query=workflow%3Abuild+branch%3Amaster+event%3Apush)
+[![main](https://github.com/skonves/tasks-with-friends/workflows/build/badge.svg?branch=main&amp;event=push)](https://github.com/skonves/tasks-with-friends/actions?query=workflow%3Abuild+branch%3Amain+event%3Apush)
 
 # Tasks with Friends
 
