@@ -1,13 +1,17 @@
 import express from 'express';
+import * as auth from './auth';
+import { middleware as scopeMiddleware } from 'ts-registry-express';
 const serverless = require('serverless-http');
 
 const app = express();
+app.use(scopeMiddleware);
+app.use(auth.middleware);
 
 const router = express.Router();
 
-router.get('/test/more', (_, res) => res.json({ message: 'hella whirled' }));
-router.get('/test', (_, res) => res.json({ message: 'hello world' }));
-router.get('/', (_, res) => res.json({ message: 'hw' }));
+router.use('/auth', auth.router);
+
+router.get('/', (_, res) => res.json({ message: 'hello world' }));
 
 app.use('/api', router);
 
