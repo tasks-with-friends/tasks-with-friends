@@ -3,6 +3,9 @@ import * as auth from './auth';
 import { middleware as scopeMiddleware } from 'ts-registry-express';
 const serverless = require('serverless-http');
 
+// Hack
+console.log(require('encoding'));
+
 const app = express();
 app.use(scopeMiddleware);
 app.use(auth.middleware);
