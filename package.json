@@ -9,6 +9,7 @@
     "build": "run-s build:*",
     "build:webpack": "webpack --config webpack.prod.js",
     "build:functions": "webpack --config webpack.functions.js",
+    "postbuild:functions": "sed -i '' 's/require(\"encoding\")/\"[REMOVED]\"/g' ./build/functions/auth.js",
     "//build:tsc": "tsc -p tsconfig.build.json",
     "build:tailwind": "tailwindcss -i src/tailwind.css -o build/dist/tailwind.css",
     "clean": "rimraf build",
