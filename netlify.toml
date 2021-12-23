@@ -5,8 +5,8 @@
   directory = 'build/functions/'
 
 [[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/api/:splat"
+  from = "/auth/*"
+  to = "/.netlify/functions/auth/:splat"
   status = 200
 
 [[redirects]]

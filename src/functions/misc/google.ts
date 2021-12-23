@@ -46,8 +46,13 @@ router.get('/', passport.authenticate('google', options));
 
 router.get(
   '/callback',
-  passport.authenticate('google', {
-    successRedirect: '/api/auth/success',
-    failureRedirect: '/api/auth/failure',
-  }),
+  (req, res) => {
+    console.log(req);
+    const { method, originalUrl, rawHeaders } = req;
+    res.json({ method, originalUrl, rawHeaders });
+  },
+  // passport.authenticate('google', {
+  //   successRedirect: '/api/auth/success',
+  //   failureRedirect: '/api/auth/failure',
+  // }),
 );
