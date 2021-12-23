@@ -74,7 +74,6 @@
     "analytics": "^0.7.19",
     "analytics-plugin-do-not-track": "^0.1.5",
     "cookie-session": "^2.0.0",
-    "encoding": "^0.1.13",
     "express": "^4.17.2",
     "faunadb": "^4.4.1",
     "jsonwebtoken": "^8.5.1",
