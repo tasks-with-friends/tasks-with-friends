@@ -4,7 +4,8 @@ module.exports = {
   mode: 'production',
   target: 'node',
   entry: {
-    api: './src/functions/api.ts',
+    // api: './src/functions/api.ts',
+    auth: './src/functions/auth.ts',
     'get-schema': './src/functions/get-schema.ts',
   },
   module: {
