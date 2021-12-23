@@ -111,4 +111,5 @@ router.get('/google/callback', async (event) => {
   }
 });
 
-export const { handler } = router;
+const handler = router.handler;
+export { handler };
