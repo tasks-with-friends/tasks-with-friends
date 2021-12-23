@@ -97,7 +97,7 @@ router.get('/google/callback', async (event) => {
     return {
       statusCode: 302,
       headers: {
-        location: '/?_=',
+        location: '/#',
         'set-cookie': `token=${token}; Max-Age=3000; path=/`,
       },
     };
