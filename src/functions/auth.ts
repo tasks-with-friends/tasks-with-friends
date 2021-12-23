@@ -111,5 +111,4 @@ router.get('/google/callback', async (event) => {
   }
 });
 
-const handler = router.handler;
-export { handler };
+module.exports.handler = router.handler.bind(router);
