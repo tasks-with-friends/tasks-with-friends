@@ -1,4 +1,9 @@
-import type { Handler, HandlerEvent } from '@netlify/functions';
+import type {
+  Handler,
+  HandlerCallback,
+  HandlerContext,
+  HandlerEvent,
+} from '@netlify/functions';
 
 type RouteHandler = {
   pattern: string;
@@ -10,7 +15,11 @@ function isRouteHandler(obj: RouteHandler | Handler): obj is RouteHandler {
   return typeof (obj as any).pattern === 'string';
 }
 
-export class NetlifyRouter<Context = any> {
+export interface Handleable {
+  handler: Handler;
+}
+
+export class NetlifyRouter<Context = any> implements Handleable {
   constructor(private readonly base: string = '', public context?: Context) {}
 
   private readonly routeTable: (RouteHandler | Handler)[] = [];
@@ -38,22 +47,24 @@ export class NetlifyRouter<Context = any> {
     }
   }
 
-  get handler(): Handler {
-    return (event, context, callback) => {
-      for (const route of this.routeTable) {
-        if (isRouteHandler(route)) {
-          if (isMatch(this.base, route, event)) {
-            return route.handler(event, context, callback);
-          }
-        } else {
-          const r = route(event, context, callback);
-
-          if (r) return r;
+  handler(
+    event: HandlerEvent,
+    context: HandlerContext,
+    callback: HandlerCallback,
+  ) {
+    for (const route of this.routeTable) {
+      if (isRouteHandler(route)) {
+        if (isMatch(this.base, route, event)) {
+          return route.handler(event, context, callback);
         }
-      }
+      } else {
+        const r = route(event, context, callback);
 
-      return { statusCode: 404 };
-    };
+        if (r) return r;
+      }
+    }
+
+    return { statusCode: 404 };
   }
 }
 

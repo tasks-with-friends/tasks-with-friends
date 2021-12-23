@@ -115,4 +115,6 @@ router.get('/google/callback', async (event) => {
 const handler: Handler = (event, context, callback) =>
   router.handler(event, context, callback);
 
+console.log({ handler });
+
 export { handler };
