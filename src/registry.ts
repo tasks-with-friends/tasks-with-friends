@@ -1,6 +1,6 @@
 import { Registry } from 'ts-registry';
-import { request } from 'ts-registry-express';
-import { FsUsersService } from './services/fs-users-service';
+// import { request } from 'ts-registry-express';
+// import { FsUsersService } from './services/fs-users-service';
 
 import { join } from 'path';
 
@@ -16,10 +16,10 @@ export type ServiceMap = {
 
 export const registry = new Registry<ServiceMap>();
 
-registry
-  .for('current-user-id')
-  .withScope(request)
-  .use((_, req) => req.session?.passport?.user?.id);
+// registry
+//   .for('current-user-id')
+//   .withScope(request)
+//   .use((_, req) => req.session?.passport?.user?.id);
 
 registry
   .for('users-service')
