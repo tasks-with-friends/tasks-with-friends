@@ -112,9 +112,11 @@ router.get('/google/callback', async (event) => {
   }
 });
 
-const handler: Handler = (event, context, callback) =>
-  router.handler(event, context, callback);
+const handler: Handler = async () => ({
+  statusCode: 200,
+  body: 'jkadlsfhalksdjfhalskdjfhaslkdfjh',
+});
 
-console.log({ handler });
+console.log(router.handler);
 
 export { handler };
