@@ -2,6 +2,7 @@ import { post } from '../net';
 import { NetlifyRouter } from '../netlify-router';
 import { registry } from '../registry';
 import jwt from 'jsonwebtoken';
+import { Handler } from '@netlify/functions';
 
 const router = new NetlifyRouter('/auth');
 
@@ -111,4 +112,7 @@ router.get('/google/callback', async (event) => {
   }
 });
 
-module.exports.handler = router.handler.bind(router);
+const handler: Handler = (event, context, callback) =>
+  router.handler(event, context, callback);
+
+export { handler };
