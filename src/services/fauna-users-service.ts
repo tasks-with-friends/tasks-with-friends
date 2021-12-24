@@ -24,6 +24,7 @@ export class FaunaUsersService implements IUsersService {
             {
               id: q.Select(['ref', 'id'], q.Var('userDoc')),
               name: q.Select(['data', 'name'], q.Var('userDoc')),
+              email: q.Select(['data', 'email'], q.Var('userDoc')),
               avatarUrl: q.Select(['data', 'avatarUrl'], q.Var('userDoc'), ''),
               provider: q.Select(['data', 'provider'], q.Var('userDoc')),
               providerUserId: q.Select(
@@ -44,6 +45,7 @@ export class FaunaUsersService implements IUsersService {
           userDoc: q.Create(q.Collection('users'), {
             data: {
               name: newUser.name,
+              email: newUser.email,
               avatarUrl: newUser.avatarUrl,
               provider: newUser.provider,
               providerUserId: newUser.providerUserId,
@@ -53,6 +55,7 @@ export class FaunaUsersService implements IUsersService {
         {
           id: q.Select(['ref', 'id'], q.Var('userDoc')),
           name: q.Select(['data', 'name'], q.Var('userDoc')),
+          email: q.Select(['data', 'email'], q.Var('userDoc')),
           avatarUrl: q.Select(['data', 'avatarUrl'], q.Var('userDoc'), ''),
           provider: q.Select(['data', 'provider'], q.Var('userDoc')),
           providerUserId: q.Select(
@@ -73,6 +76,7 @@ export class FaunaUsersService implements IUsersService {
         {
           id: q.Select(['ref', 'id'], q.Var('userDoc')),
           name: q.Select(['data', 'name'], q.Var('userDoc')),
+          email: q.Select(['data', 'email'], q.Var('userDoc')),
           avatarUrl: q.Select(['data', 'avatarUrl'], q.Var('userDoc'), ''),
           provider: q.Select(['data', 'provider'], q.Var('userDoc')),
           providerUserId: q.Select(

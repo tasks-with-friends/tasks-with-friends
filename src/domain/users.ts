@@ -6,6 +6,7 @@ export interface IUsersService {
 export type User = {
   id: string;
   name: string;
+  email: string;
   avatarUrl?: string;
   provider: string;
   providerUserId: string;

@@ -6,23 +6,10 @@ import { Handler } from '@netlify/functions';
 
 const router = new NetlifyRouter('/auth');
 
-router.get('/', async (event) => ({
-  statusCode: 200,
-  body: 'auth home',
-}));
-
-router.get('/login', async (event) => ({
-  statusCode: 200,
-  headers: {
-    'content-type': 'text/html',
-  },
-  body: '<html><body><a href="/auth/google">Log in with Google</a></body></html>',
-}));
-
 router.get('/logout', async (event) => ({
   statusCode: 302,
   headers: {
-    location: '/auth/login',
+    location: '/?logout=success',
     'set-cookie': `token=${jwt.sign(
       {
         iss: process.env.WEBAPP_DOMAIN,
@@ -73,6 +60,7 @@ router.get('/google/callback', async (event) => {
     // 2) get or set user
     const user = await registry.get('users-service').getOrCreate({
       name: profile.name,
+      email: profile.email || '',
       provider: 'google',
       providerUserId: profile.sub || '',
       avatarUrl: profile.picture,
@@ -83,7 +71,8 @@ router.get('/google/callback', async (event) => {
         iss: process.env.WEBAPP_DOMAIN,
         sub: user.id,
         name: user.name,
-        avatarUl: user.avatarUrl,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
         provider: user.provider,
         providerUserId: user.providerUserId,
         iat: profile.iat,

@@ -25,6 +25,7 @@ const strategy = new OAuth2Strategy(
   async (accessToken, refreshToken, profile, done) => {
     const user = await registry.get('users-service').getOrCreate({
       name: profile.displayName,
+      email: 'none',
       avatarUrl: profile.photos?.[0]?.value,
       provider: profile.provider,
       providerUserId: profile.id,
