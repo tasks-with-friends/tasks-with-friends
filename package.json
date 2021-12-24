@@ -72,6 +72,8 @@
   },
   "dependencies": {
     "@analytics/google-analytics": "^0.5.3",
+    "@headlessui/react": "^1.4.2",
+    "@heroicons/react": "^1.0.5",
     "analytics": "^0.7.19",
     "analytics-plugin-do-not-track": "^0.1.5",
     "cookie-session": "^2.0.0",
