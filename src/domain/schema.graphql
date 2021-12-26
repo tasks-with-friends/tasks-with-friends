@@ -1,0 +1,320 @@
+"""
+The query root
+"""
+type Query {
+  """
+  The currently logged in user.
+  """
+  me: User!
+  """
+  The friends of the currently logged in user.
+  """
+  friends(
+    first: Integer
+    last: Integer
+    after: String
+    before: String
+  ): UserConnection!
+  """
+  Tasks accessible by the currrent user
+  """
+  tasks(
+    first: Integer
+    last: Integer
+    after: String
+    before: String
+  ): TaskConnection!
+  task(id: ID!): Task
+
+  """
+  Invitations the current user has sent to others.
+  When the other user accepts the invitation, they and the current user
+  will be see each other in their friend lists.
+  """
+  outgoingInvitations(
+    first: Integer
+    last: Integer
+    after: String
+    before: String
+  ): InvitationConnection!
+
+  """
+  Invitations the current user has received from others.
+  When the current user accepts the invitation, they and the other user
+  will be see each other in their friend lists.
+  """
+  incomingInvitations(
+    first: Integer
+    last: Integer
+    after: String
+    before: String
+  ): InvitationConnection!
+}
+
+"""
+The root query for implementing GraphQL mutations.
+"""
+type Mutation {
+  addFriend(input: AddFriendInput): AddFriendPayload
+  removeFriend(input: RemoveFriendInput): RemoveFriendPayload
+  addTask(input: AddTaskInput): AddTaskPayload
+  setUserStatus(input: SetUserStatusInput): SetUserStatusPayload
+  editTask(input: EditTaskInput): EditTaskPayload
+  removeTask(input: RemoveTaskInput): RemoveTaskPayload
+  setResponse(input: SetResponseInput): SetResponsePayload
+  clearResponse(input: ClearResponseInput): ClearResponsePayload
+}
+
+type PageInfo {
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+  startCursor: String!
+  endCursort: String!
+}
+
+###################
+
+input AddFriendInput {
+  email: String!
+}
+
+type AddFriendPayload {
+  invitation: Invitation!
+}
+
+input RemoveFriendInput {
+  userId: ID!
+}
+
+type RemoveFriendPayload {
+  success: Boolean
+}
+
+type Invitation {
+  id: ID!
+  """
+  The email address of the friend to add
+  """
+  invitedEmail: String!
+  """
+  The user who sent the invitation
+  """
+  from: User!
+}
+
+type InvitationConnection {
+  edges: [InvitationEdge!]!
+  nodes: [Invitation!]!
+  pageInfo: PageInfo!
+}
+
+type InvitationEdge {
+  node: Invitation!
+  cursor: String!
+}
+
+###################
+
+input SetUserStatusInput {
+  status: UserStatus!
+}
+
+type SetUserStatusPayload {
+  me: User!
+}
+
+type User {
+  """
+  The unique ID for this user
+  """
+  id: ID!
+  """
+  The display name
+  """
+  name: String!
+  """
+  The email address
+  """
+  email: String!
+  """
+  The avatar URL
+  """
+  avatarUrl: String
+  """
+  User status
+  """
+  status: UserStatus!
+}
+
+enum UserStatus {
+  """
+  Online, but not doing anything.
+  """
+  IDLE
+  """
+  In the zone focusing on a task.
+  """
+  FLOW
+  """
+  Not online.
+  """
+  AWAY
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  nodes: [User!]!
+  pageInfo: PageInfo!
+}
+
+type UserEdge {
+  node: User!
+  cursor: String!
+}
+
+##################
+
+input AddTaskInput {
+  """
+  A short name of the task.
+  """
+  name: String!
+  """
+  An optional description or details for the task.
+  """
+  description: String
+  """
+  The number of participants needed to get started (not included the owner).
+  """
+  groupSize: Integer
+
+  userIds: [ID!]
+}
+
+type AddTaskPayload {
+  task: Task!
+}
+
+input EditTaskInput {
+  id: ID!
+  description: String
+  durationMinutes: Integer
+  groupSize: Integer
+  name: String
+  status: String
+  participants: IdCollection
+}
+
+type EditTaskPayload {
+  task: Task!
+}
+
+input RemoveTaskInput {
+  id: ID!
+}
+
+type RemoveTaskPayload {
+  task: Task!
+}
+
+"""
+A conversation or activity to do with one or more other people.
+"""
+type Task {
+  id: ID!
+  """
+  A short name of the task.
+  """
+  name: String!
+  """
+  An optional description or details for the task.
+  """
+  description: String
+  """
+  The user who created the task.
+  """
+  owner: User!
+  """
+  The users who have been added to the task.
+  """
+  participants: ParticipantConnection!
+  """
+  The number of participants needed to get started (not included the owner).
+  """
+  groupSize: Integer!
+  """
+  The estimated amount of time that this task will take. This helps users prioritize their tasks.
+  """
+  durationMinutes: Integer!
+
+  status: TaskStatus!
+}
+
+enum TaskStatus {
+  READY
+  IN_PROGRESS
+  DONE
+  CANCELED
+}
+
+type TaskConnection {
+  edges: [TaskEdge!]!
+  nodes: [Task!]!
+  pageInfo: PageInfo!
+}
+
+type TaskEdge {
+  node: Task!
+  cursor: String!
+}
+
+###################
+
+input SetResponseInput {
+  participantId: ID!
+  response: ParticipantResponse!
+}
+
+type SetResponsePayload {
+  participant: Participant!
+}
+
+input ClearResponseInput {
+  participantId: ID!
+}
+
+type ClearResponsePayload {
+  participant: Participant!
+}
+
+input IdCollection {
+  add: [ID!]
+  remove: [ID!]
+  set: [ID!]
+}
+
+enum ParticipantResponse {
+  YES
+  NO
+}
+
+"""
+A person who has been added to a task.
+"""
+type Participant {
+  id: ID!
+  user: User!
+  task: Task!
+  response: ParticipantResponse
+}
+
+type ParticipantConnection {
+  edges: [ParticipantEdge!]!
+  nodes: [Participant!]!
+  pageInfo: PageInfo!
+}
+
+type ParticipantEdge {
+  node: Participant!
+  cursor: String!
+}

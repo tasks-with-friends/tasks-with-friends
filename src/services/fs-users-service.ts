@@ -2,10 +2,24 @@ import fs from 'fs/promises';
 
 import { v4 } from 'uuid';
 
-import { IUsersService, NewUser, User } from '../domain';
+import { IUsersService, NewUser, User, UserStatus } from '../domain';
+import { Pagination, Page } from '../domain/utils';
 
 export class FsUsersService implements IUsersService {
   constructor(private readonly filepath: string) {}
+
+  async getUsers(ids: string[]): Promise<User[]> {
+    const data = await this.read();
+    return ids.map((id) => data[id]).filter((x) => x);
+  }
+
+  getFriends(page?: Pagination): Promise<Page<User>> {
+    throw new Error('Method not implemented.');
+  }
+
+  setStatus(status: UserStatus): Promise<User> {
+    throw new Error('Method not implemented.');
+  }
 
   async getOrCreate(newUser: NewUser): Promise<User> {
     const users = await this.read();
@@ -30,9 +44,6 @@ export class FsUsersService implements IUsersService {
     await this.write(users);
 
     return createdUser;
-  }
-  async getUser(id: string): Promise<User | undefined> {
-    return (await this.read())[id];
   }
 
   private async read(): Promise<Record<string, User>> {
