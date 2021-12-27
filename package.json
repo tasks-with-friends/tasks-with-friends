@@ -23,7 +23,7 @@
     "netlify": "dotenv -e secrets.env netlify dev",
     "postbuild": "run-s copyfiles",
     "pretest": "rm -rf coverage/*",
-    "test": "jest",
+    "test": "dotenv -e secrets.env jest",
     "prestart": "run-s build-info copyfiles",
     "start": "run-s watch",
     "watch": "dotenv -e secrets.env concurrently npm:watch:*",

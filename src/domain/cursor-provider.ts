@@ -1,3 +1,3 @@
 export interface CursorProvider<T> {
-  getCursor(obj: T): string;
+  getCursor(obj: T | null | undefined): string;
 }
