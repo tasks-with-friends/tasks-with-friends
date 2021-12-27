@@ -120,6 +120,7 @@ data
 # Build output
 build/
 src/build-info.ts
+*.g.*
 
 # Netlify output
 .netlify/

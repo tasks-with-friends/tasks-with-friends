@@ -9,21 +9,11 @@ type Query {
   """
   The friends of the currently logged in user.
   """
-  friends(
-    first: Int
-    last: Int
-    after: String
-    before: String
-  ): UserConnection!
+  friends(first: Int, last: Int, after: String, before: String): UserConnection!
   """
   Tasks accessible by the currrent user
   """
-  tasks(
-    first: Int
-    last: Int
-    after: String
-    before: String
-  ): TaskConnection!
+  tasks(first: Int, last: Int, after: String, before: String): TaskConnection!
   task(id: ID!): Task
 
   """
@@ -55,14 +45,16 @@ type Query {
 The root query for implementing GraphQL mutations.
 """
 type Mutation {
-  addFriend(input: AddFriendInput): AddFriendPayload
-  removeFriend(input: RemoveFriendInput): RemoveFriendPayload
-  addTask(input: AddTaskInput): AddTaskPayload
-  setUserStatus(input: SetUserStatusInput): SetUserStatusPayload
-  editTask(input: EditTaskInput): EditTaskPayload
-  removeTask(input: RemoveTaskInput): RemoveTaskPayload
-  setResponse(input: SetResponseInput): SetResponsePayload
-  clearResponse(input: ClearResponseInput): ClearResponsePayload
+  inviteFriend(input: InviteFriendInput!): InviteFriendPayload!
+  removeFriend(input: RemoveFriendInput!): RemoveFriendPayload!
+  acceptInvite(input: AcceptInviteInput!): AcceptInvitePayload!
+  rejectInvite(input: RejectInviteInput!): RejectInvitePayload!
+  addTask(input: AddTaskInput!): AddTaskPayload!
+  setUserStatus(input: SetUserStatusInput!): SetUserStatusPayload!
+  editTask(input: EditTaskInput!): EditTaskPayload!
+  removeTask(input: RemoveTaskInput!): RemoveTaskPayload!
+  setResponse(input: SetResponseInput!): SetResponsePayload!
+  clearResponse(input: ClearResponseInput!): ClearResponsePayload!
 }
 
 type PageInfo {
@@ -74,11 +66,11 @@ type PageInfo {
 
 ###################
 
-input AddFriendInput {
+input InviteFriendInput {
   email: String!
 }
 
-type AddFriendPayload {
+type InviteFriendPayload {
   invitation: Invitation!
 }
 
@@ -87,6 +79,22 @@ input RemoveFriendInput {
 }
 
 type RemoveFriendPayload {
+  success: Boolean
+}
+
+input AcceptInviteInput {
+  id: String!
+}
+
+type AcceptInvitePayload {
+  friend: User!
+}
+
+input RejectInviteInput {
+  id: String!
+}
+
+type RejectInvitePayload {
   success: Boolean
 }
 

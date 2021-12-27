@@ -8,6 +8,10 @@ import { Pagination, Page } from '../domain/utils';
 export class FsUsersService implements IUsersService {
   constructor(private readonly filepath: string) {}
 
+  getCursor(obj: User): string {
+    return obj.id;
+  }
+
   async getUsers(ids: string[]): Promise<User[]> {
     const data = await this.read();
     return ids.map((id) => data[id]).filter((x) => x);

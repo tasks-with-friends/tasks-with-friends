@@ -1,11 +1,5 @@
 import React, { useContext, useMemo } from 'react';
-
-export type Profile = {
-  id: string;
-  name: string;
-  email: string;
-  avatarUrl?: string;
-};
+import { Profile } from './types';
 
 const ProfileContext = React.createContext<Profile | null>(null);
 

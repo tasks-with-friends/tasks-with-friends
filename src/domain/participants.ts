@@ -1,6 +1,7 @@
+import { CursorProvider } from './cursor-provider';
 import { Page, Pagination } from './utils';
 
-export interface ParticipantService {
+export interface ParticipantService extends CursorProvider<Participant> {
   getParticipants(ids: string[]): Promise<Participant[]>;
   getParticipantsByTask(
     taskId: string,

@@ -6,6 +6,10 @@ import { Page, Pagination } from '../domain/utils';
 export class FaunaUsersService implements IUsersService {
   constructor(private readonly fauna: Client) {}
 
+  getCursor(obj: User): string {
+    return obj.id;
+  }
+
   async getFriends(page?: Pagination): Promise<Page<User>> {
     throw new Error('Method not implemented.');
   }

@@ -10,6 +10,7 @@
     "build:webpack": "webpack --config webpack.prod.js",
     "build:functions": "webpack --config webpack.functions.js",
     "postbuild:functions": "ts-node tools/strip-require ./build/functions/auth.js",
+    "build:graphql": "generate-server-types -i src/domain/schema.graphql -o src/graphql/server-types.g.ts",
     "//build:tsc": "tsc -p tsconfig.build.json",
     "build:tailwind": "tailwindcss -i src/tailwind.css -o build/dist/tailwind.css",
     "clean": "rimraf build",
@@ -26,6 +27,7 @@
     "prestart": "run-s build-info copyfiles",
     "start": "run-s watch",
     "watch": "dotenv -e secrets.env concurrently npm:watch:*",
+    "watch:graphql": "run-s \"build:graphql -- --watch\"",
     "watch:tailwind": "run-s \"build:tailwind -- --watch\"",
     "watch:webpack": "webpack serve --config webpack.dev.js"
   },

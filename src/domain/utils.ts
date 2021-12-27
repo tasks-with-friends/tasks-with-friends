@@ -8,8 +8,8 @@ export type Page<T> = {
   items: T[];
   hasPreviousPage: boolean;
   hasNextPage: boolean;
-  startCursor: String;
-  endCursor: String;
+  startCursor: string;
+  endCursor: string;
 };
 
 export type IdCollection = {
