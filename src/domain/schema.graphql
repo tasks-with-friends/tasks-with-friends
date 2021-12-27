@@ -10,8 +10,8 @@ type Query {
   The friends of the currently logged in user.
   """
   friends(
-    first: Integer
-    last: Integer
+    first: Int
+    last: Int
     after: String
     before: String
   ): UserConnection!
@@ -19,8 +19,8 @@ type Query {
   Tasks accessible by the currrent user
   """
   tasks(
-    first: Integer
-    last: Integer
+    first: Int
+    last: Int
     after: String
     before: String
   ): TaskConnection!
@@ -32,8 +32,8 @@ type Query {
   will be see each other in their friend lists.
   """
   outgoingInvitations(
-    first: Integer
-    last: Integer
+    first: Int
+    last: Int
     after: String
     before: String
   ): InvitationConnection!
@@ -44,8 +44,8 @@ type Query {
   will be see each other in their friend lists.
   """
   incomingInvitations(
-    first: Integer
-    last: Integer
+    first: Int
+    last: Int
     after: String
     before: String
   ): InvitationConnection!
@@ -69,7 +69,7 @@ type PageInfo {
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
   startCursor: String!
-  endCursort: String!
+  endCursor: String!
 }
 
 ###################
@@ -186,7 +186,7 @@ input AddTaskInput {
   """
   The number of participants needed to get started (not included the owner).
   """
-  groupSize: Integer
+  groupSize: Int
 
   userIds: [ID!]
 }
@@ -198,8 +198,8 @@ type AddTaskPayload {
 input EditTaskInput {
   id: ID!
   description: String
-  durationMinutes: Integer
-  groupSize: Integer
+  durationMinutes: Int
+  groupSize: Int
   name: String
   status: String
   participants: IdCollection
@@ -241,11 +241,11 @@ type Task {
   """
   The number of participants needed to get started (not included the owner).
   """
-  groupSize: Integer!
+  groupSize: Int!
   """
   The estimated amount of time that this task will take. This helps users prioritize their tasks.
   """
-  durationMinutes: Integer!
+  durationMinutes: Int!
 
   status: TaskStatus!
 }
