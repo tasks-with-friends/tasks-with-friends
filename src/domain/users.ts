@@ -1,6 +1,7 @@
+import { CursorProvider } from './cursor-provider';
 import { Page, Pagination } from './utils';
 
-export interface IUsersService {
+export interface IUsersService extends CursorProvider<User> {
   getOrCreate(user: NewUser): Promise<User>;
   getUsers(ids: string[]): Promise<User[]>;
   getFriends(page?: Pagination): Promise<Page<User>>;

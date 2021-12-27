@@ -1,6 +1,7 @@
+import { CursorProvider } from './cursor-provider';
 import { IdCollection, Page, Pagination } from './utils';
 
-export interface TaskService {
+export interface TaskService extends CursorProvider<Task> {
   getTasks(ids: string[]): Promise<Task[]>;
   getTasksByUserId(userId: string, page?: Pagination): Promise<Page<Task>>;
   createTask(task: NewTask): Promise<Task>;

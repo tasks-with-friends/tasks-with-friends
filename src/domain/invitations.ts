@@ -1,9 +1,11 @@
+import { CursorProvider } from './cursor-provider';
 import { Page, Pagination } from './utils';
 
-export interface InvitationService {
+export interface InvitationService extends CursorProvider<Invitation> {
   getIncomingInvitations(page?: Pagination): Promise<Page<Invitation>>;
   getOutgoingInvitations(page?: Pagination): Promise<Page<Invitation>>;
   createInvitation(invitation: NewInvitation): Promise<Invitation>;
+  removeInvitation(id: string): Promise<Invitation>;
 }
 
 export type Invitation = {

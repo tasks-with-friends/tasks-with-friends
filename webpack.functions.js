@@ -6,6 +6,7 @@ module.exports = {
   entry: {
     // api: './src/functions/api.ts',
     auth: './src/functions/auth.ts',
+    graphql: './src/functions/graphql.ts',
     'get-schema': './src/functions/get-schema.ts',
   },
   module: {

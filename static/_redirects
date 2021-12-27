@@ -1,2 +1,3 @@
 /auth/*  /.netlify/functions/auth/:splat 200
+/graphql/*  /.netlify/functions/graphql/:splat 200
 /*  /index.html 200

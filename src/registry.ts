@@ -4,12 +4,20 @@ import { Registry } from 'ts-registry';
 
 import { join } from 'path';
 
-import { IUsersService } from './domain';
+import {
+  InvitationService,
+  IUsersService,
+  ParticipantService,
+  TaskService,
+} from './domain';
 import { Client } from 'faunadb';
 import { FaunaUsersService } from './services/fauna-users-service';
 
 export type ServiceMap = {
   'current-user-id': string;
+  'invitation-service': InvitationService;
+  'participant-service': ParticipantService;
+  'task-service': TaskService;
   'users-service': IUsersService;
   fauna: Client;
 };
