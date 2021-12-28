@@ -13,7 +13,13 @@ type Query {
   """
   Tasks accessible by the currrent user
   """
-  tasks(first: Int, last: Int, after: String, before: String): TaskConnection!
+  tasks(
+    filter: TaskFilter!
+    first: Int
+    last: Int
+    after: String
+    before: String
+  ): TaskConnection!
   task(id: ID!): Task
 
   """
@@ -256,6 +262,17 @@ type Task {
   durationMinutes: Int!
 
   status: TaskStatus!
+}
+
+enum TaskFilter {
+  """
+  Only tasks that the current user owns
+  """
+  MINE
+  """
+  All tasks that the current user has access to
+  """
+  ALL
 }
 
 enum TaskStatus {

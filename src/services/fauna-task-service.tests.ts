@@ -129,7 +129,7 @@ describe.skip('fauna-task-service', () => {
     ]);
 
     // ACT
-    const myTasks = await me.getTasksByUserId(myUser.id, { take: 2 });
+    const myTasks = await me.getTasksByOwnerId(myUser.id, { take: 2 });
 
     console.log(myTasks);
   });

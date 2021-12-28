@@ -37,7 +37,7 @@ export const root: Root = {
   },
   tasks: async (args, { profile, registry }) => {
     const service = registry.get('task-service');
-    const tasks = await service.getTasksByUserId(profile.id, paginate(args));
+    const tasks = await service.getTasksByOwnerId(profile.id, paginate(args));
 
     return taskConnection(tasks, service);
   },
