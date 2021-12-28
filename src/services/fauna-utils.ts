@@ -46,6 +46,16 @@ export class FaunaUtils {
       );
     }
 
+    if (!collections.includes('tasks')) {
+      expressions.push(
+        q.CreateCollection({
+          name: 'tasks',
+          history_days: 30,
+          ttl_days: null,
+        }),
+      );
+    }
+
     if (!indexes.includes('invitations_by_fromUser')) {
       expressions.push(
         q.CreateIndex({
@@ -113,6 +123,22 @@ export class FaunaUtils {
             },
             {
               field: ['data', 'providerUserId'],
+            },
+          ],
+        }),
+      );
+    }
+
+    if (!indexes.includes('tasks_by_owner')) {
+      expressions.push(
+        q.CreateIndex({
+          name: 'tasks_by_owner',
+          unique: false,
+          serialized: true,
+          source: q.Collection('tasks'),
+          terms: [
+            {
+              field: ['data', 'owner'],
             },
           ],
         }),
