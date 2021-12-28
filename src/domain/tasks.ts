@@ -6,7 +6,7 @@ export interface TaskService extends CursorProvider<Task> {
   getTasksByUserId(userId: string, page?: Pagination): Promise<Page<Task>>;
   createTask(task: NewTask): Promise<Task>;
   editTask(task: TaskUpdate): Promise<Task>;
-  removeTask(id: string): Promise<Task>;
+  removeTask(id: string): Promise<Task | undefined>;
 }
 
 export type Task = {
@@ -24,16 +24,15 @@ export type NewTask = {
   description?: string;
   durationMinutes: number;
   groupSize: number;
-  participants: IdCollection;
 };
 
 export type TaskUpdate = {
+  id: string;
   name?: string;
-  description?: string;
+  description?: string | null;
   durationMinutes?: number;
   groupSize?: number;
   status?: TaskStatus;
-  participants?: IdCollection;
 };
 
 export type TaskStatus = 'ready' | 'in-progress' | 'done' | 'canceled';

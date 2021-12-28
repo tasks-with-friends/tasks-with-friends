@@ -7,6 +7,12 @@ import { Pagination, Page } from '../domain/utils';
 
 export class FsUsersService implements IUsersService {
   constructor(private readonly filepath: string) {}
+  addFriend(userId: string): Promise<User | undefined> {
+    throw new Error('Method not implemented.');
+  }
+  removeFriend(userId: string): Promise<boolean> {
+    throw new Error('Method not implemented.');
+  }
 
   getCursor(obj: User): string {
     return obj.id;
