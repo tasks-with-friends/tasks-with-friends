@@ -5,6 +5,8 @@ export interface IUsersService extends CursorProvider<User> {
   getOrCreate(user: NewUser): Promise<User>;
   getUsers(ids: string[]): Promise<User[]>;
   getFriends(page?: Pagination): Promise<Page<User>>;
+  addFriend(userId: string): Promise<User | undefined>;
+  removeFriend(userId: string): Promise<boolean>;
   setStatus(status: UserStatus): Promise<User>;
 }
 
