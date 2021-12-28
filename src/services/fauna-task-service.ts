@@ -1,8 +1,12 @@
-import { Client, query as q, Var } from 'faunadb';
+import { Client, query as q } from 'faunadb';
 
 import { NewTask, Task, TaskService, TaskUpdate } from '../domain';
 import { Pagination, Page } from '../domain/utils';
-import { BaseFaunaService, FaunaResponse } from './base-fauna-service';
+import {
+  BaseFaunaService,
+  FaunaResponse,
+  SelectExpr,
+} from './base-fauna-service';
 
 export class FaunaTaskService
   extends BaseFaunaService<Task>
@@ -27,7 +31,7 @@ export class FaunaTaskService
           'id',
           q.Let(
             {
-              t: q.Get(q.Ref(q.Collection('users'), q.Var('id'))),
+              t: q.Get(q.Ref(q.Collection(this.collection), q.Var('id'))),
             },
             {
               id: q.Select(['ref', 'id'], q.Var('t')),
@@ -51,8 +55,8 @@ export class FaunaTaskService
     );
   }
 
-  async getTasksByUserId(
-    userId: string,
+  async getTasksByOwnerId(
+    ownerId: string,
     page?: Pagination,
   ): Promise<Page<Task>> {
     const pagingExpr = this.pagingExpr(page);
@@ -62,6 +66,45 @@ export class FaunaTaskService
           page: q.Paginate(
             q.Match(
               q.Index('tasks_by_owner'),
+              q.Ref(q.Collection('users'), ownerId),
+            ),
+            pagingExpr,
+          ),
+        },
+        {
+          before: q.Select(['before', 0, 'id'], q.Var('page'), ''),
+          after: q.Select(['after', 0, 'id'], q.Var('page'), ''),
+          take: pagingExpr.size,
+          data: q.Map(
+            q.Select(['data'], q.Var('page')),
+            q.Lambda(
+              'ref',
+              q.Let(
+                {
+                  t: q.Get(q.Var('ref')),
+                },
+                selectExpr,
+              ),
+            ),
+          ),
+        },
+      ),
+    );
+
+    return this.toPage(page, result);
+  }
+
+  async getTasksByParticipatingUserId(
+    userId: string,
+    page?: Pagination,
+  ): Promise<Page<Task>> {
+    const pagingExpr = this.pagingExpr(page);
+    const result = await this.client.query<FaunaResponse<Task>>(
+      q.Let(
+        {
+          page: q.Paginate(
+            q.Match(
+              q.Index('participants_by_user_with_task'),
               q.Ref(q.Collection('users'), userId),
             ),
             pagingExpr,
@@ -72,29 +115,14 @@ export class FaunaTaskService
           after: q.Select(['after', 0, 'id'], q.Var('page'), ''),
           take: pagingExpr.size,
           data: q.Map(
-            q.Select(['data'], Var('page')),
+            q.Select(['data'], q.Var('page')),
             q.Lambda(
               'ref',
               q.Let(
                 {
-                  t: q.Get(Var('ref')),
+                  t: q.Get(q.Var('ref')),
                 },
-                {
-                  id: q.Select(['ref', 'id'], q.Var('t')),
-                  ownerId: q.Select(['data', 'owner', 'id'], q.Var('t')),
-                  name: q.Select(['data', 'name'], q.Var('t')),
-                  description: q.Select(
-                    ['data', 'description'],
-                    q.Var('t'),
-                    '',
-                  ),
-                  durationMinutes: q.Select(
-                    ['data', 'durationMinutes'],
-                    q.Var('t'),
-                  ),
-                  groupSize: q.Select(['data', 'groupSize'], q.Var('t')),
-                  status: q.Select(['data', 'status'], q.Var('t')),
-                },
+                selectExpr,
               ),
             ),
           ),
@@ -106,6 +134,7 @@ export class FaunaTaskService
   }
 
   createTask(task: NewTask): Promise<Task> {
+    // TODO: also create self-participant
     return this.client.query<Task>(
       q.Let(
         {
@@ -134,6 +163,7 @@ export class FaunaTaskService
   }
 
   editTask(task: TaskUpdate): Promise<Task> {
+    // TODO: AuthN
     const { name, description, durationMinutes, groupSize, status } = task;
     const data: Omit<TaskUpdate, 'id'> = {};
     if (present(name)) data.name = name;
@@ -214,3 +244,13 @@ function present<T>(value: T | null | undefined): value is T {
 function defined<T>(value: T | null | undefined): value is T | null {
   return typeof value !== 'undefined';
 }
+
+const selectExpr: SelectExpr<Task> = {
+  id: q.Select(['ref', 'id'], q.Var('t')),
+  ownerId: q.Select(['data', 'owner', 'id'], q.Var('t')),
+  name: q.Select(['data', 'name'], q.Var('t')),
+  description: q.Select(['data', 'description'], q.Var('t'), ''),
+  durationMinutes: q.Select(['data', 'durationMinutes'], q.Var('t')),
+  groupSize: q.Select(['data', 'groupSize'], q.Var('t')),
+  status: q.Select(['data', 'status'], q.Var('t'), 'ready'),
+};

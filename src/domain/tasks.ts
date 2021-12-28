@@ -3,7 +3,11 @@ import { IdCollection, Page, Pagination } from './utils';
 
 export interface TaskService extends CursorProvider<Task> {
   getTasks(ids: string[]): Promise<Task[]>;
-  getTasksByUserId(userId: string, page?: Pagination): Promise<Page<Task>>;
+  getTasksByOwnerId(ownerId: string, page?: Pagination): Promise<Page<Task>>;
+  getTasksByParticipatingUserId(
+    userId: string,
+    page?: Pagination,
+  ): Promise<Page<Task>>;
   createTask(task: NewTask): Promise<Task>;
   editTask(task: TaskUpdate): Promise<Task>;
   removeTask(id: string): Promise<Task | undefined>;

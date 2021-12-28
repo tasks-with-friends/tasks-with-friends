@@ -46,6 +46,16 @@ export class FaunaUtils {
       );
     }
 
+    if (!collections.includes('paticipants')) {
+      expressions.push(
+        q.CreateCollection({
+          name: 'paticipants',
+          history_days: 30,
+          ttl_days: null,
+        }),
+      );
+    }
+
     if (!collections.includes('tasks')) {
       expressions.push(
         q.CreateCollection({
@@ -139,6 +149,59 @@ export class FaunaUtils {
           terms: [
             {
               field: ['data', 'owner'],
+            },
+          ],
+        }),
+      );
+    }
+
+    if (!indexes.includes('paticipants_by_task')) {
+      expressions.push(
+        q.CreateIndex({
+          name: 'paticipants_by_task',
+          unique: false,
+          serialized: true,
+          source: q.Collection('participants'),
+          terms: [
+            {
+              field: ['data', 'task'],
+            },
+          ],
+        }),
+      );
+    }
+
+    if (!indexes.includes('paticipants_by_user')) {
+      expressions.push(
+        q.CreateIndex({
+          name: 'paticipants_by_user',
+          unique: false,
+          serialized: true,
+          source: q.Collection('participants'),
+          terms: [
+            {
+              field: ['data', 'user'],
+            },
+          ],
+        }),
+      );
+    }
+
+    if (!indexes.includes('participants_by_user_with_task')) {
+      expressions.push(
+        q.CreateIndex({
+          name: 'participants_by_user_with_task',
+          unique: false,
+          serialized: true,
+          source: q.Collection('participants'),
+          terms: [
+            {
+              field: ['data', 'user'],
+            },
+          ],
+          values: [
+            {
+              field: ['data', 'task'],
             },
           ],
         }),

@@ -7,8 +7,15 @@ export interface ParticipantService extends CursorProvider<Participant> {
     taskId: string,
     page?: Pagination,
   ): Promise<Page<Participant>>;
-  setResponse(id: string, response: ParticipantResponse): Promise<Participant>;
-  clearResponse(id: string): Promise<Participant>;
+  getParticipantsByUser(
+    userId: string,
+    page?: Pagination,
+  ): Promise<Page<Participant>>;
+  setResponse(
+    id: string,
+    response: ParticipantResponse,
+  ): Promise<Participant | undefined>;
+  clearResponse(id: string): Promise<Participant | undefined>;
 }
 
 export type Participant = {

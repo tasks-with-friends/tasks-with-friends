@@ -15,6 +15,8 @@ export type FaunaPagingExpr = {
   after?: Expr[] | undefined;
 };
 
+export type SelectExpr<T> = Record<keyof T, Expr>;
+
 export abstract class BaseFaunaService<T> implements CursorProvider<T> {
   constructor(
     protected readonly collection: string,
