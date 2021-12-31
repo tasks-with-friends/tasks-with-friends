@@ -6,13 +6,14 @@ import { useProfile } from '../profile-provider';
 import { Link } from 'react-router-dom';
 
 const navigation = [
-  { name: 'Dashboard', href: '/', current: true },
-  { name: 'Friends', href: '/friends', current: false },
-  { name: 'Tasks', href: '/tasks', current: false },
+  { name: 'Dashboard', to: '/', current: true },
+  { name: 'Friends', to: '/friends', current: false },
+  { name: 'Tasks', to: '/tasks', current: false },
 ];
 const userNavigation = [
-  { name: 'Your Profile', href: '/profile' },
-  { name: 'Settings', href: '/settings' },
+  { name: 'Your Profile', to: '/profile' },
+  { name: 'Settings', to: '/settings' },
+  { name: 'Sign out', href: '/auth/logout' },
 ];
 
 function classNames(...classes) {
@@ -51,7 +52,7 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                         {navigation.map((item) => (
                           <Link
                             key={item.name}
-                            to={item.href}
+                            to={item.to}
                             className={classNames(
                               item.current
                                 ? 'bg-gray-900 text-white'
@@ -100,29 +101,28 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                           <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                             {userNavigation.map((item) => (
                               <Menu.Item key={item.name}>
-                                {({ active }) => (
-                                  <Link
-                                    to={item.href}
-                                    className={classNames(
-                                      active ? 'bg-gray-100' : '',
-                                      'block px-4 py-2 text-sm text-gray-700',
-                                    )}
-                                  >
-                                    {item.name}
-                                  </Link>
-                                )}
+                                {({ active }) =>
+                                  item.to ? (
+                                    <Link
+                                      to={item.to}
+                                      className={classNames(
+                                        active ? 'bg-gray-100' : '',
+                                        'block px-4 py-2 text-sm text-gray-700',
+                                      )}
+                                    >
+                                      {item.name}
+                                    </Link>
+                                  ) : (
+                                    <a
+                                      href={item.href}
+                                      className="block px-4 py-2 text-sm text-gray-700"
+                                    >
+                                      {item.name}
+                                    </a>
+                                  )
+                                }
                               </Menu.Item>
                             ))}
-                            <Menu.Item key="/auth/logout">
-                              {() => (
-                                <a
-                                  href="/auth/logout"
-                                  className="block px-4 py-2 text-sm text-gray-700"
-                                >
-                                  Sign out
-                                </a>
-                              )}
-                            </Menu.Item>
                           </Menu.Items>
                         </Transition>
                       </Menu>
@@ -148,10 +148,9 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
               <Disclosure.Panel className="md:hidden">
                 <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                   {navigation.map((item) => (
-                    <Disclosure.Button
+                    <Link
                       key={item.name}
-                      as="a"
-                      href={item.href}
+                      to={item.to}
                       className={classNames(
                         item.current
                           ? 'bg-gray-900 text-white'
@@ -161,7 +160,7 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                       aria-current={item.current ? 'page' : undefined}
                     >
                       {item.name}
-                    </Disclosure.Button>
+                    </Link>
                   ))}
                 </div>
                 <div className="pt-4 pb-3 border-t border-gray-700">
@@ -190,16 +189,26 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                     </button>
                   </div>
                   <div className="mt-3 px-2 space-y-1">
-                    {userNavigation.map((item) => (
-                      <Disclosure.Button
-                        key={item.name}
-                        as="a"
-                        href={item.href}
-                        className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700"
-                      >
-                        {item.name}
-                      </Disclosure.Button>
-                    ))}
+                    {userNavigation.map((item) =>
+                      item.to ? (
+                        <Link
+                          key={item.name}
+                          to={item.to}
+                          className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700"
+                        >
+                          {item.name}
+                        </Link>
+                      ) : (
+                        <Disclosure.Button
+                          key={item.name}
+                          as="a"
+                          href={item.href}
+                          className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700"
+                        >
+                          {item.name}
+                        </Disclosure.Button>
+                      ),
+                    )}
                   </div>
                 </div>
               </Disclosure.Panel>
