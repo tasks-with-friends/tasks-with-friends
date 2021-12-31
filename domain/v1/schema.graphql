@@ -200,7 +200,11 @@ input AddTaskInput {
   """
   The number of participants needed to get started (not included the owner).
   """
-  groupSize: Int
+  groupSize: Int!
+  """
+  The estimated amount of time that this task will take. This helps users prioritize their tasks.
+  """
+  durationMinutes: Int!
 
   userIds: [ID!]
 }
@@ -251,7 +255,12 @@ type Task {
   """
   The users who have been added to the task.
   """
-  participants: ParticipantConnection!
+  participants(
+    first: Int
+    last: Int
+    after: String
+    before: String
+  ): ParticipantConnection!
   """
   The number of participants needed to get started (not included the owner).
   """

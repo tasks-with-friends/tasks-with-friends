@@ -1,6 +1,6 @@
 import { Maybe } from 'graphql/jsutils/Maybe';
 import { Page, Pagination } from '../domain/utils';
-import { PageInfo } from './server-types.g';
+import { PageInfo } from '../domain/v1/graph.g';
 
 export function nullable<T>(value: Maybe<T>): T | null {
   if (value === null) return null;

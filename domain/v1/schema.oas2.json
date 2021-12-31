@@ -1,0 +1,654 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Tasks with Friends",
+    "description": "Public API for tasks with friends",
+    "version": "1.0.0"
+  },
+  "parameters": {
+    "first": {
+      "in": "query",
+      "name": "first",
+      "type": "integer",
+      "format": "int32",
+      "required": false
+    },
+    "after": {
+      "in": "query",
+      "name": "after",
+      "type": "string",
+      "required": false
+    },
+    "last": {
+      "in": "query",
+      "name": "last",
+      "type": "integer",
+      "format": "int32",
+      "required": false
+    },
+    "before": {
+      "in": "query",
+      "name": "before",
+      "type": "string",
+      "required": false
+    }
+  },
+  "paths": {
+    "/invitations": {
+      "get": {
+        "operationId": "getInvitations",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "filter",
+            "type": "string",
+            "enum": ["incoming", "outgoing"],
+            "required": true
+          },
+          { "$ref": "#/parameters/first" },
+          { "$ref": "#/parameters/after" },
+          { "$ref": "#/parameters/last" },
+          { "$ref": "#/parameters/before" }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/invitationPage" }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createInvitation",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "invitation",
+            "schema": { "$ref": "#/definitions/newInvitation" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/invitation" }
+          }
+        }
+      }
+    },
+    "/invitations/:invitationId": {
+      "parameters": [
+        {
+          "in": "path",
+          "name": "invitationId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "delete": {
+        "operationId": "removeInvitation",
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/invitation" }
+          }
+        }
+      }
+    },
+
+    "/tasks": {
+      "get": {
+        "operationId": "getTasks",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "taskIds",
+            "type": "array",
+            "items": { "type": "string" },
+            "collectionFormat": "csv",
+            "allowEmptyValue": false,
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "ownerId",
+            "type": "string",
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "participantId",
+            "type": "string",
+            "required": false
+          },
+          { "$ref": "#/parameters/first" },
+          { "$ref": "#/parameters/after" },
+          { "$ref": "#/parameters/last" },
+          { "$ref": "#/parameters/before" }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/taskPage" }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createTask",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "task",
+            "schema": { "$ref": "#/definitions/newTask" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true }
+      ],
+      "get": {
+        "operationId": "getTask",
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateTask",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "taskUpdate",
+            "schema": { "$ref": "#/definitions/taskUpdate" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeTask",
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId/participants": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true }
+      ],
+      "get": {
+        "operationId": "getParticipants",
+        "parameters": [
+          { "$ref": "#/parameters/first" },
+          { "$ref": "#/parameters/after" },
+          { "$ref": "#/parameters/last" },
+          { "$ref": "#/parameters/before" }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/participantPage" }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createParticipants",
+        "parameters": [
+          {
+            "in": "body",
+            "required": true,
+            "name": "participants",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/newParticipant" }
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/participantList" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId/participants/:participantId": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true },
+        {
+          "in": "path",
+          "name": "participantId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "patch": {
+        "operationId": "updateParticipant",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "participant",
+            "schema": { "$ref": "#/definitions/participantUpdate" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/participant" }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeParticipant",
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/participant" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId/participants/:participantId/response": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true },
+        {
+          "in": "path",
+          "name": "participantId",
+          "type": "string",
+          "required": true
+        }
+      ],
+      "delete": {
+        "operationId": "clearParticipantResponse",
+        "responses": {
+          "default": {
+            "description": "success"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "operationId": "getUsers",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userIds",
+            "type": "array",
+            "items": { "type": "string" },
+            "collectionFormat": "csv",
+            "allowEmptyValue": false,
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/userList" }
+          }
+        }
+      },
+      "post": {
+        "operationId": "getOrCreateUser",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "schema": { "$ref": "#/definitions/newUser" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/user" }
+          }
+        }
+      }
+    },
+    "/users/:userId": {
+      "parameters": [
+        { "in": "path", "name": "userId", "type": "string", "required": true }
+      ],
+      "get": {
+        "operationId": "getUser",
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/user" }
+          }
+        }
+      },
+      "patch": {
+        "operationId": "updateUser",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "userUpdate",
+            "schema": { "$ref": "#/definitions/userUpdate" },
+            "required": true
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/user" }
+          }
+        }
+      }
+    },
+    "/users/:userId/friends": {
+      "parameters": [
+        { "in": "path", "name": "userId", "type": "string", "required": true }
+      ],
+      "get": {
+        "operationId": "getFriendsByUserId",
+        "parameters": [
+          { "$ref": "#/parameters/first" },
+          { "$ref": "#/parameters/after" },
+          { "$ref": "#/parameters/last" },
+          { "$ref": "#/parameters/before" }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/userPage" }
+          }
+        }
+      }
+    },
+    "/users/:userId/friends/:friendId": {
+      "parameters": [
+        { "in": "path", "name": "userId", "type": "string", "required": true },
+        { "in": "path", "name": "friendId", "type": "string", "required": true }
+      ],
+      "post": {
+        "operationId": "addFriendToUser",
+        "responses": {
+          "201": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/user" }
+          }
+        }
+      },
+      "delete": {
+        "operationId": "removeFriendFromUser",
+        "responses": {
+          "204": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/user" }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "id": { "type": "string" },
+
+    "invitation": {
+      "type": "object",
+      "required": ["id", "fromUserId", "invitedEmail"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "fromUserId": { "$ref": "#/definitions/id" },
+        "invitedEmail": { "type": "string" }
+      }
+    },
+    "newInvitation": {
+      "type": "object",
+      "required": ["invitedEmail"],
+      "properties": {
+        "invitedEmail": { "type": "string" }
+      }
+    },
+    "invitationList": {
+      "description": "A collection of invitations that does not support Relay-style pagination",
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/invitation" }
+        }
+      }
+    },
+    "invitationPage": {
+      "description": "A collection of invitations that supports Relay-style pagination",
+      "type": "object",
+      "required": [
+        "hasPreviousPage",
+        "startCursor",
+        "endCursor",
+        "hasNextPage",
+        "items"
+      ],
+      "allOf": [
+        { "$ref": "#/definitions/page" },
+        { "$ref": "#/definitions/invitationList" }
+      ]
+    },
+
+    "participant": {
+      "type": "object",
+      "required": ["id", "taskId", "userId"],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "userId": { "$ref": "#/definitions/id" },
+        "taskId": { "$ref": "#/definitions/id" },
+        "response": { "$ref": "#/definitions/participantResponse" }
+      }
+    },
+    "newParticipant": {
+      "type": "object",
+      "required": ["userId"],
+      "properties": {
+        "userId": { "$ref": "#/definitions/id" }
+      }
+    },
+    "participantUpdate": {
+      "type": "object",
+      "properties": {
+        "response": { "$ref": "#/definitions/participantResponse" }
+      }
+    },
+    "participantResponse": {
+      "type": "string",
+      "enum": ["yes", "no"]
+    },
+    "participantList": {
+      "description": "A collection of participants that does not support Relay-style pagination",
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/participant" }
+        }
+      }
+    },
+    "participantPage": {
+      "description": "A collection of participants that supports Relay-style pagination",
+      "type": "object",
+      "required": [
+        "hasPreviousPage",
+        "startCursor",
+        "endCursor",
+        "hasNextPage",
+        "items"
+      ],
+      "allOf": [
+        { "$ref": "#/definitions/page" },
+        { "$ref": "#/definitions/participantList" }
+      ]
+    },
+
+    "task": {
+      "type": "object",
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "durationMinutes",
+        "groupSize",
+        "status"
+      ],
+      "properties": {
+        "id": { "$ref": "#/definitions/id" },
+        "ownerId": { "$ref": "#/definitions/id" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "durationMinutes": { "type": "integer", "format": "int32" },
+        "groupSize": { "type": "integer", "format": "int32" },
+        "status": { "$ref": "#/definitions/taskStatus" }
+      }
+    },
+    "newTask": {
+      "type": "object",
+      "required": ["name", "durationMinutes", "groupSize"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "durationMinutes": { "type": "integer", "format": "int32" },
+        "groupSize": { "type": "integer", "format": "int32" }
+      }
+    },
+    "taskUpdate": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "durationMinutes": { "type": "integer", "format": "int32" },
+        "groupSize": { "type": "integer", "format": "int32" },
+        "status": { "$ref": "#/definitions/taskStatus" }
+      }
+    },
+    "taskStatus": {
+      "type": "string",
+      "enum": ["ready", "in-progress", "done", "canceled"]
+    },
+    "taskList": {
+      "description": "A collection of tasks that does not support Relay-style pagination",
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/definitions/task" } }
+      }
+    },
+    "taskPage": {
+      "description": "A collection of tasks that supports Relay-style pagination",
+      "type": "object",
+      "required": [
+        "hasPreviousPage",
+        "startCursor",
+        "endCursor",
+        "hasNextPage",
+        "items"
+      ],
+      "allOf": [
+        { "$ref": "#/definitions/page" },
+        { "$ref": "#/definitions/taskList" }
+      ]
+    },
+
+    "user": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "email",
+        "provider",
+        "providerUserId",
+        "status"
+      ],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "provider": { "type": "string" },
+        "providerUserId": { "type": "string" },
+        "status": { "$ref": "#/definitions/userStatus" }
+      }
+    },
+    "newUser": {
+      "type": "object",
+      "required": ["name", "email", "provider", "providerUserId"],
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "provider": { "type": "string" },
+        "providerUserId": { "type": "string" }
+      }
+    },
+    "userUpdate": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "$ref": "#/definitions/userStatus" }
+      }
+    },
+    "userStatus": {
+      "type": "string",
+      "enum": ["idle", "flow", "away"]
+    },
+    "userList": {
+      "description": "A collection of users that does not support Relay-style pagination",
+      "type": "object",
+      "required": ["items"],
+      "properties": {
+        "items": { "type": "array", "items": { "$ref": "#/definitions/user" } }
+      }
+    },
+    "userPage": {
+      "description": "A collection of users that supports Relay-style pagination",
+      "type": "object",
+      "required": [
+        "hasPreviousPage",
+        "startCursor",
+        "endCursor",
+        "hasNextPage",
+        "items"
+      ],
+      "allOf": [
+        { "$ref": "#/definitions/page" },
+        { "$ref": "#/definitions/userList" }
+      ]
+    },
+    "page": {
+      "description": "A base collection that supports Relay-style pagination",
+      "type": "object",
+      "required": [
+        "hasPreviousPage",
+        "startCursor",
+        "endCursor",
+        "hasNextPage"
+      ],
+      "properties": {
+        "hasPreviousPage": { "type": "boolean" },
+        "startCursor": { "type": "string" },
+        "endCursor": { "type": "string" },
+        "hasNextPage": { "type": "boolean" }
+      }
+    }
+  }
+}

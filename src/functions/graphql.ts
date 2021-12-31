@@ -5,7 +5,7 @@ import type {
 } from '@netlify/functions';
 import { graphql, buildSchema } from 'graphql';
 import { root } from '../graphql/server';
-import { source } from '../graphql/server-types.g';
+import { source } from '../domain/v1/graph.g';
 import { Profile } from '../types';
 import { registry } from '../registry';
 
@@ -20,6 +20,8 @@ type Request = {
 const handler: Handler = async (event, context) => {
   const { profile, notAuthorized } = authorize(event);
   if (notAuthorized) return notAuthorized;
+
+  console.log({ 'current-user-id': registry.get('current-user-id'), profile });
 
   const { methodNotAllowed } = checkMethod(event, ['POST', 'HEAD', 'OPTIONS']);
   if (methodNotAllowed) return methodNotAllowed;
@@ -116,6 +118,8 @@ function authorize(event: HandlerEvent): {
     if (!profile.sub) return { notAuthorized };
     if (!profile.name) return { notAuthorized };
     if (!profile.email) return { notAuthorized };
+
+    registry.for('current-user-id').use(() => profile.sub);
 
     return {
       profile: {
