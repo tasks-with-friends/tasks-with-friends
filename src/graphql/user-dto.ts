@@ -1,7 +1,7 @@
-import * as domain from '../domain';
+import * as domain from '../domain/v1/api.g';
+import * as schema from '../domain/v1/graph.g';
 import { CursorProvider } from '../domain/cursor-provider';
 import { Page } from '../domain/utils';
-import * as schema from './server-types.g';
 import { pageInfo } from './utils';
 
 export function userDto(object: domain.User): schema.User {
@@ -15,19 +15,18 @@ export function userDto(object: domain.User): schema.User {
 export const resolveUserById =
   (userId: string): schema.Resolver<schema.User> =>
   async (_, { registry }) => {
-    const users = await registry.get('users-service').getUsers([userId]);
+    const users = await registry
+      .get('user-service')
+      .getUsers({ userIds: [userId] });
 
     return userDto(users[0]);
   };
 
-export function userConnection(
-  page: Page<domain.User>,
-  cursorProvider: CursorProvider<domain.User>,
-): schema.UserConnection {
+export function userConnection(page: Page<domain.User>): schema.UserConnection {
   return {
     edges: () =>
       page.items.map((item) => ({
-        cursor: cursorProvider.getCursor(item),
+        cursor: item.id,
         node: userDto(item),
       })),
     nodes: () => page.items.map(userDto),

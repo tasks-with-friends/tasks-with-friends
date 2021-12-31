@@ -1,7 +1,7 @@
-import * as domain from '../domain';
+import * as domain from '../domain/v1/api.g';
+import * as schema from '../domain/v1/graph.g';
 import { CursorProvider } from '../domain/cursor-provider';
 import { Page } from '../domain/utils';
-import * as schema from './server-types.g';
 import { resolveUserById } from './user-dto';
 import { pageInfo } from './utils';
 
@@ -18,12 +18,11 @@ export function invitationDto(
 
 export function invitationConnection(
   page: Page<domain.Invitation>,
-  cursorProvider: CursorProvider<domain.Invitation>,
 ): schema.InvitationConnection {
   return {
     edges: () =>
       page.items.map((item) => ({
-        cursor: cursorProvider.getCursor(item),
+        cursor: item.id,
         node: invitationDto(item),
       })),
     nodes: () => page.items.map(invitationDto),

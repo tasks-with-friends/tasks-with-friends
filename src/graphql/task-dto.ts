@@ -1,8 +1,7 @@
-import * as domain from '../domain';
-import { CursorProvider } from '../domain/cursor-provider';
+import * as domain from '../domain/v1/api.g';
+import * as schema from '../domain/v1/graph.g';
 import { Page } from '../domain/utils';
 import { resolveParticipantsByTaskId } from './participant-dto';
-import * as schema from './server-types.g';
 import { userDto } from './user-dto';
 import { nullable, pageInfo } from './utils';
 
@@ -12,10 +11,12 @@ export function taskDto(task: domain.Task): schema.Task {
   return {
     ...rest,
     description: nullable(description),
-    owner: (_, { registry }) => {
-      const users = registry.get('users-service').getUsers([ownerId]);
+    owner: async (_, { registry }) => {
+      const user = await registry
+        .get('user-service')
+        .getUser({ userId: ownerId });
 
-      return userDto(users[0]);
+      return userDto(user);
     },
     status: () => {
       switch (status) {
@@ -36,19 +37,18 @@ export function taskDto(task: domain.Task): schema.Task {
 export const resolveTaskById =
   (taskId: string): schema.Resolver<schema.Task> =>
   async (_, { registry }) => {
-    const tasks = await registry.get('task-service').getTasks([taskId]);
+    const tasks = await registry
+      .get('task-service')
+      .getTasks({ taskIds: [taskId] });
 
     return taskDto(tasks[0]);
   };
 
-export function taskConnection(
-  page: Page<domain.Task>,
-  cursorProvider: CursorProvider<domain.Task>,
-): schema.TaskConnection {
+export function taskConnection(page: Page<domain.Task>): schema.TaskConnection {
   return {
     edges: () =>
       page.items.map((item) => ({
-        cursor: cursorProvider.getCursor(item),
+        cursor: item.id,
         node: taskDto(item),
       })),
     nodes: () => page.items.map(taskDto),

@@ -2,7 +2,6 @@ import { post } from '../net';
 import { NetlifyRouter } from '../netlify-router';
 import { registry } from '../registry';
 import jwt from 'jsonwebtoken';
-import { Handler } from '@netlify/functions';
 
 const router = new NetlifyRouter('/auth');
 
@@ -58,12 +57,14 @@ router.get('/google/callback', async (event) => {
     }
 
     // 2) get or set user
-    const user = await registry.get('users-service').getOrCreate({
-      name: profile.name,
-      email: profile.email || '',
-      provider: 'google',
-      providerUserId: profile.sub || '',
-      avatarUrl: profile.picture,
+    const user = await registry.get('user-service').getOrCreateUser({
+      user: {
+        name: profile.name,
+        email: profile.email || '',
+        provider: 'google',
+        providerUserId: profile.sub || '',
+        avatarUrl: profile.picture,
+      },
     });
 
     const token = jwt.sign(

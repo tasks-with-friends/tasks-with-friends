@@ -23,12 +23,14 @@ const strategy = new OAuth2Strategy(
     callbackURL: `${process.env.WEBAPP_DOMAIN}/api/auth/google/callback`,
   },
   async (accessToken, refreshToken, profile, done) => {
-    const user = await registry.get('users-service').getOrCreate({
-      name: profile.displayName,
-      email: 'none',
-      avatarUrl: profile.photos?.[0]?.value,
-      provider: profile.provider,
-      providerUserId: profile.id,
+    const user = await registry.get('user-service').getOrCreateUser({
+      user: {
+        name: profile.displayName,
+        email: 'none',
+        avatarUrl: profile.photos?.[0]?.value,
+        provider: profile.provider,
+        providerUserId: profile.id,
+      },
     });
 
     return done(null, {

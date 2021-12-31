@@ -91,12 +91,14 @@ export const router = express.Router();
 router.get('/', async (_, res) => {
   const currentUserId = registry.get('current-user-id');
   if (currentUserId) {
-    const users = await registry.get('users-service').getUsers([currentUserId]);
+    const users = await registry
+      .get('user-service')
+      .getUsers({ userIds: [currentUserId] });
 
     return res
       .set('content-type', 'text/html')
       .send(
-        `<html><body>Logged in as ${users[0]?.name} <a href="/api/auth/logout">logout</a><br/></body></html>`,
+        `<html><body>Logged in as ${users.items[0]?.name} <a href="/api/auth/logout">logout</a><br/></body></html>`,
       );
   } else {
     return res.redirect('/api/auth/login');

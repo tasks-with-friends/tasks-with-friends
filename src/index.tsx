@@ -1,5 +1,6 @@
 import React from 'react';
 import { render } from 'react-dom';
+import { ApolloClient, InMemoryCache, ApolloProvider } from '@apollo/client';
 
 import { buildInfo } from './build-info';
 import { ProfileProvider } from './profile-provider';
@@ -7,10 +8,17 @@ import { Router } from './router';
 
 console.log(JSON.stringify(buildInfo, null, 2));
 
+const apolloClient = new ApolloClient({
+  uri: '/graphql',
+  cache: new InMemoryCache(),
+});
+
 render(
-  <ProfileProvider>
-    <Router />
-  </ProfileProvider>,
+  <ApolloProvider client={apolloClient}>
+    <ProfileProvider>
+      <Router />
+    </ProfileProvider>
+  </ApolloProvider>,
   document.getElementById('app-root'),
 );
 
