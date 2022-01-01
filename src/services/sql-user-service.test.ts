@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { User, UserPage } from '../domain/v1/api.g';
 import { SqlUserService } from './sql-user-service';
 
-const schema = process.env['DB_SCHEMA'] || '';
+const schema = 'public'; // process.env['DB_SCHEMA'] || '';
 let pool: Pool;
 describe.skip('SqlUserService', () => {
   beforeAll(() => {
@@ -360,6 +360,7 @@ describe.skip('SqlUserService', () => {
       });
       const others = await new SqlUserService(
         pool,
+        schema,
         other.id,
       ).getFriendsByUserId({
         userId: other.id,
