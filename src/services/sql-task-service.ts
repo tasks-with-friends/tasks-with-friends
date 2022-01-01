@@ -25,8 +25,8 @@ export class SqlTaskService implements TaskService {
 
     const row = (
       await this.pool.query<{ id: number; external_id: string }>(
-        `INSERT INTO ${this.schema}.tasks (owner_id, name, description, duration_minutes, group_size, status)
-        SELECT id, $2, $3, $4, $5, 'ready' from ${this.schema}.users WHERE external_id = $1
+        `INSERT INTO ${this.schema}.tasks (owner_external_id, name, description, duration_minutes, group_size, status)
+        VALUES ($1, $2, $3, $4, $5, 'ready')
         RETURNING id, external_id`,
         [this.currentUserId, name, description, durationMinutes, groupSize],
       )
@@ -34,14 +34,12 @@ export class SqlTaskService implements TaskService {
 
     if (!row) throw new Error('Not Found');
 
-    const { id, external_id } = row;
+    const { external_id } = row;
 
     await this.pool.query(
-      `
-        INSERT INTO ${this.schema}.participants (task_id, user_id, response)
-        SELECT $1, id, 'yes' FROM ${this.schema}.users WHERE external_id = $2
-    `,
-      [id, this.currentUserId],
+      `INSERT INTO ${this.schema}.participants (task_external_id, user_external_id, response)
+        VALUES ($1, $2, 'yes')`,
+      [external_id, this.currentUserId],
     );
 
     return this.getTask({ taskId: external_id });
@@ -70,11 +68,9 @@ export class SqlTaskService implements TaskService {
   private async getTasksById(taskIds: string[]): Promise<TaskPage> {
     const items = (
       await this.pool.query<DbTask>(
-        `SELECT t.id, t.external_id, t.owner_id, u.external_id owner_external_id, t.name, t.description, t.duration_minutes, t.group_size, t.status
-          FROM ${this.schema}.tasks t
-          JOIN ${this.schema}.users u
-          ON t.owner_id = u.id
-          WHERE t.external_id IN (${taskIds.map((_, i) => `$${i + 1}`)})`,
+        `SELECT id, external_id, owner_external_id, name, description, duration_minutes, group_size, status
+          FROM ${this.schema}.tasks
+          WHERE external_id IN (${taskIds.map((_, i) => `$${i + 1}`)})`,
         [...taskIds],
       )
     ).rows.map(using(dbTaskToTask));
@@ -110,13 +106,12 @@ export class SqlTaskService implements TaskService {
 
     const items = (
       await this.pool.query<DbTask>(
-        `SELECT t.id, t.external_id, t.owner_id, u.external_id owner_external_id, t.name, t.description, t.duration_minutes, t.group_size, t.status
-          FROM ${this.schema}.tasks t
-          JOIN ${this.schema}.users u ON t.owner_id = u.id
-          WHERE u.external_id = $1
+        `SELECT id, external_id, owner_external_id, name, description, duration_minutes, group_size, status
+          FROM ${this.schema}.tasks
+          WHERE owner_external_id = $1
           
-          ${sortValue ? `AND (t.id, t.external_id) ${operator} ($3, $4)` : ''}
-          ORDER BY t.id ${orderBy}, t.external_id ${orderBy}
+          ${sortValue ? `AND (id, external_id) ${operator} ($3, $4)` : ''}
+          ORDER BY id ${orderBy}, external_id ${orderBy}
           limit $2`,
         sortValue ? [ownerId, limit, sortValue, uniqueId] : [ownerId, limit],
       )
@@ -147,11 +142,12 @@ export class SqlTaskService implements TaskService {
 
     const items = (
       await this.pool.query<DbTask>(
-        `SELECT t.id, t.external_id, t.owner_id, u.external_id owner_external_id, t.name, t.description, t.duration_minutes, t.group_size, t.status
+        `SELECT t.id, t.external_id, t.owner_external_id, t.name, t.description, t.duration_minutes, t.group_size, t.status
           FROM ${this.schema}.tasks t
-          JOIN ${this.schema}.participants p on t.id = p.task_id
-          JOIN ${this.schema}.users u ON p.user_id = u.id
-          WHERE u.external_id = $1
+          JOIN ${
+            this.schema
+          }.participants p on t.external_id = p.task_external_id
+          WHERE p.user_external_id = $1
           
           ${sortValue ? `AND (t.id, t.external_id) ${operator} ($3, $4)` : ''}
           ORDER BY t.id ${orderBy}, t.external_id ${orderBy}
@@ -214,19 +210,16 @@ export class SqlTaskService implements TaskService {
 
   async removeTask(params: { taskId: string }): Promise<Task> {
     await this.pool.query<DbTask>(
-      `DELETE FROM ONLY ${this.schema}.participants p
-        USING ${this.schema}.tasks t
-        WHERE p.task_id = t.id AND t.external_id = $1`,
+      `DELETE FROM ONLY ${this.schema}.participants
+        WHERE task_external_id = $1`,
       [params.taskId],
     );
 
     const deleted = (
       await this.pool.query<DbTask>(
-        `DELETE FROM ONLY ${this.schema}.tasks t
-        USING ${this.schema}.users u
-        WHERE t.owner_id = u.id
-          AND t.external_id = $1
-        RETURNING t.id, t.external_id, t.owner_id, u.external_id owner_external_id, t.name, t.description, t.duration_minutes, t.group_size, t.status`,
+        `DELETE FROM ONLY ${this.schema}.tasks
+        WHERE external_id = $1
+        RETURNING id, external_id, owner_external_id, name, description, duration_minutes, group_size, status`,
         [params.taskId],
       )
     ).rows.map(using(dbTaskToTask))[0];
@@ -241,26 +234,15 @@ export class SqlTaskService implements TaskService {
     participants: NewParticipant[];
   }): Promise<ParticipantList> {
     const userIds = params.participants.map((p) => p.userId);
-    const createdIds = (
-      await this.pool.query<{ id: number }>(
-        `INSERT INTO ${this.schema}.participants (task_id, user_id)
-          SELECT t.id, u.id FROM ${this.schema}.users u
-          JOIN ${this.schema}.tasks t ON t.external_id = $1
-          WHERE u.external_id IN (${userIds.map((_, i) => `$${i + 2}`)})
-          RETURNING id`,
-        [params.taskId, ...userIds],
-      )
-    ).rows;
 
     const items = (
       await this.pool.query<DbParticipant>(
-        `SELECT p.id, p.external_id, t.external_id task_external_id, u.external_id user_external_id, p.response FROM ${
+        `INSERT INTO ${
           this.schema
-        }.participants p
-        JOIN ${this.schema}.users u ON p.user_id = u.id
-        JOIN ${this.schema}.tasks t IN p.task_id = t.id
-        WHERE p.id IN (${createdIds.map((_, i) => `$${i + 1}`)})`,
-        [...createdIds],
+        }.participants (task_external_id, user_external_id)
+          VALUES ${userIds.map((_, i) => `($1, $${i + 2})`).join(',')}
+          RETURNING id, external_id, task_external_id, user_external_id, response`,
+        [params.taskId, ...userIds],
       )
     ).rows.map(using(dbParticipantToParticipant));
 
@@ -285,15 +267,13 @@ export class SqlTaskService implements TaskService {
 
     const items = (
       await this.pool.query<DbParticipant>(
-        `SELECT p.id, p.external_id, t.external_id task_external_id, u.external_id user_external_id, p.response FROM ${
+        `SELECT id, external_id, task_external_id, user_external_id, response FROM ${
           this.schema
         }.participants p
-        JOIN ${this.schema}.users u ON p.user_id = u.id
-        JOIN ${this.schema}.tasks t ON p.task_id = t.id
-        WHERE t.external_id = $1
+        WHERE task_external_id = $1
         
-        ${sortValue ? `AND (p.id, p.external_id) ${operator} ($3, $4)` : ''}
-        ORDER BY p.id ${orderBy}, p.external_id ${orderBy}
+        ${sortValue ? `AND (id, external_id) ${operator} ($3, $4)` : ''}
+        ORDER BY id ${orderBy}, external_id ${orderBy}
         limit $2`,
         sortValue
           ? [params.taskId, limit, sortValue, uniqueId]
@@ -321,20 +301,13 @@ export class SqlTaskService implements TaskService {
 
     if (!UNSANITIZED_fields.length) throw new Error('Bad Request');
 
-    await this.pool.query(
-      `UPDATE ${this.schema}.participants
-      SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 1}`).join(', ')}
-      WHERE external_id = $1`,
-      [params.participantId, ...values],
-    );
-
     const updated = (
       await this.pool.query<DbParticipant>(
-        `SELECT p.id, p.external_id, t.external_id task_external_id, u.external_id user_external_id, p.response FROM ${this.schema}.participants p
-        JOIN ${this.schema}.users u ON p.user_id = u.id
-        JOIN ${this.schema}.tasks t IN p.task_id = t.id
-        WHERE p.external_id = $1`,
-        [params.participantId],
+        `UPDATE ${this.schema}.participants
+      SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 1}`).join(', ')}
+      WHERE task_external_id = $1 AND external_id = $2
+      RETURNING id, external_id, task_external_id, user_external_id, response`,
+        [params.taskId, params.participantId, ...values],
       )
     ).rows.map(using(dbParticipantToParticipant))[0];
 
@@ -347,20 +320,13 @@ export class SqlTaskService implements TaskService {
     taskId: string;
     participantId: string;
   }): Promise<Participant> {
+    // TODO: ensure the current user is the owner
     const deleted = (
       await this.pool.query<DbParticipant>(
-        `DELETE FROM ONLY ${this.schema}.participants p
-        USING ${this.schema}.users u
-        USING ${this.schema}.users owner
-        USING ${this.schema}.tasks t
-        WHERE p.user_id = u.id
-          AND p.task_id = t.id
-          AND t.owner_user_id = owner_id
-          AND owner.external_id = $1
-          AND t.external_id = $2
-          AND p.external_id = $3
-        RETURNING p.id, p.external_id, t.external_id task_external_id, u.external_id user_external_id, p.response`,
-        [this.currentUserId, params.taskId, params.participantId],
+        `DELETE FROM ONLY ${this.schema}.participants
+          WHERE task_external_id = $1 AND external_id = $2
+          RETURNING id, external_id, task_external_id, user_external_id, response`,
+        [params.taskId, params.participantId],
       )
     ).rows.map(using(dbParticipantToParticipant))[0];
 
@@ -373,20 +339,13 @@ export class SqlTaskService implements TaskService {
     taskId: string;
     participantId: string;
   }): Promise<void> {
-    await this.pool.query(
-      `UPDATE ${this.schema}.participants
-      SET response = NULL
-      WHERE external_id = $1`,
-      [params.participantId],
-    );
-
     const updated = (
-      await this.pool.query<DbParticipant>(
-        `SELECT p.id, p.external_id, t.external_id task_external_id, u.external_id user_external_id, p.response FROM ${this.schema}.participants p
-        JOIN ${this.schema}.users u ON p.user_id = u.id
-        JOIN ${this.schema}.tasks t IN p.task_id = t.id
-        WHERE p.external_id = $1`,
-        [params.participantId],
+      await this.pool.query(
+        `UPDATE ${this.schema}.participants
+          SET response = NULL
+          WHERE task_external_id = $1 AND external_id = $2
+          RETURNING id, external_id, task_external_id, user_external_id, response`,
+        [params.taskId, params.participantId],
       )
     ).rows.map(using(dbParticipantToParticipant))[0];
 
@@ -413,7 +372,6 @@ export class SqlTaskService implements TaskService {
 type DbTask = {
   id: number;
   external_id: string;
-  owner_id: number;
   owner_external_id: string;
   name: string;
   description: string;
