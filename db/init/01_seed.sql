@@ -31,13 +31,13 @@ CREATE TABLE
     tasks (
         id SERIAL PRIMARY KEY,
         external_id CHAR(36) NOT NULL DEFAULT gen_random_uuid():: VARCHAR,
-        owner_id INT NOT NULL,
+        owner_external_id CHAR(36) NOT NULL,
         name VARCHAR(255) NOT NULL,
         description VARCHAR(2000),
         duration_minutes INT NOT NULL,
         group_size INT NOT NULL,
         status VARCHAR(255) NOT NULL,
-        CONSTRAINT fk_tasks_owner_id FOREIGN KEY(owner_id) REFERENCES users(id)
+        CONSTRAINT fk_tasks_owner_external_id FOREIGN KEY(owner_external_id) REFERENCES users(external_id)
     );
 
 CREATE UNIQUE INDEX ix_tasks_external_id
@@ -47,25 +47,25 @@ CREATE TABLE
     friends (
         id SERIAL PRIMARY KEY,
         external_id CHAR(36) NOT NULL DEFAULT gen_random_uuid():: VARCHAR,
-        user_id INT NOT NULL,
-        friend_user_id INT NOT NULL,
-        CONSTRAINT fk_friends_user_id FOREIGN KEY(user_id) REFERENCES users(id),
-        CONSTRAINT fk_friends_friend_user_id FOREIGN KEY(friend_user_id) REFERENCES users(id)
+        user_external_id CHAR(36) NOT NULL,
+        friend_user_external_id CHAR(36) NOT NULL,
+        CONSTRAINT fk_friends_user_external_id FOREIGN KEY(user_external_id) REFERENCES users(external_id),
+        CONSTRAINT fk_friends_friend_user_external_id FOREIGN KEY(friend_user_external_id) REFERENCES users(external_id)
     );
 
 CREATE UNIQUE INDEX ix_friends_external_id
 ON friends(external_id);
 
-CREATE UNIQUE INDEX ix_friends_user_id_friend_user_id
-ON friends(user_id, friend_user_id);
+CREATE UNIQUE INDEX ix_friends_user_external_id_friend_user_external_id
+ON friends(user_external_id, friend_user_external_id);
 
 CREATE TABLE
     invitations (
         id SERIAL PRIMARY KEY,
         external_id CHAR(36) NOT NULL DEFAULT gen_random_uuid():: VARCHAR,
-        from_user_id INT NOT NULL,
+        from_user_external_id CHAR(36) NOT NULL,
         invited_email VARCHAR(255) NOT NULL,
-        CONSTRAINT fk_invitations_from_user_id FOREIGN KEY(from_user_id) REFERENCES users(id)
+        CONSTRAINT fk_invitations_from_user_external_id FOREIGN KEY(from_user_external_id) REFERENCES users(external_id)
     );
 
 CREATE INDEX ix_invitations_invited_email
@@ -75,7 +75,7 @@ CREATE UNIQUE INDEX ix_invitations_external_id
 ON invitations(external_id);
 
 CREATE UNIQUE INDEX ix_invitations_from_user_id_invited_email
-ON invitations(from_user_id, invited_email);
+ON invitations(from_user_external_id, invited_email);
 
 CREATE INDEX ix_invitations_id_external_id_asc
 ON invitations (id ASC, external_id ASC);
@@ -87,11 +87,11 @@ CREATE TABLE
     participants (
         id SERIAL PRIMARY KEY,
         external_id CHAR(36) NOT NULL DEFAULT gen_random_uuid():: VARCHAR,
-        task_id INT NOT NULL,
-        user_id INT NOT NULL,
+        task_external_id CHAR(36) NOT NULL,
+        user_external_id CHAR(36) NOT NULL,
         response VARCHAR(255),
-        CONSTRAINT fk_participants_user_id FOREIGN KEY(user_id) REFERENCES users(id),
-        CONSTRAINT fk_participants_task_id FOREIGN KEY(task_id) REFERENCES tasks(id)
+        CONSTRAINT fk_participants_user_external_id FOREIGN KEY(user_external_id) REFERENCES users(external_id),
+        CONSTRAINT fk_participants_task_external_id FOREIGN KEY(task_external_id) REFERENCES tasks(external_id)
     );
 
 CREATE UNIQUE INDEX ix_participants_external_id

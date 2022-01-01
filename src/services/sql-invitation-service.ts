@@ -19,27 +19,18 @@ export class SqlInvitationService implements InvitationService {
   }): Promise<Invitation> {
     if (!this.currentUserId) throw new Error('Unauthorized');
 
-    const row = (
-      await this.pool.query<{ id: number }>(
-        `INSERT INTO ${this.schema}.invitations (from_user_id, invited_email)
-        SELECT u.id, $2 from ${this.schema}.users u
-        WHERE u.external_id = $1
-        LIMIT 1`,
+    const invitation = (
+      await this.pool.query<DbInvitation>(
+        `INSERT INTO ${this.schema}.invitations (from_user_external_id, invited_email)
+        VALUES ($1, $2)
+        RETURNING external_id, from_user_external_id, invited_email`,
         [this.currentUserId, params.invitation.invitedEmail],
       )
-    ).rows[0];
-
-    if (!row) throw new Error('Not Found');
-
-    return (
-      await this.pool.query<DbInvitation>(
-        `SELECT i.external_id, u.external_id from_user_external_id, i.invited_email
-        FROM ${this.schema}.invitations i
-        JOIN ${this.schema}.users u ON u.id = i.from_user_id
-        WHERE i.id = $1`,
-        [row.id],
-      )
     ).rows.map(using(dbInvitationToInvitation))[0];
+
+    if (!invitation) throw new Error('Not Found');
+
+    return invitation;
   }
 
   async getInvitations(params: {
@@ -59,7 +50,7 @@ export class SqlInvitationService implements InvitationService {
         : this.currentUserId;
 
     const UNSANITIZED_whereField =
-      filter === 'incoming' ? 'i.invited_email' : 'u.external_id';
+      filter === 'incoming' ? 'i.invited_email' : 'i.from_user_external_id';
 
     const { uniqueId, count, limit, direction } = parsePage(25, params);
     const orderBy = direction === 'forward' ? 'DESC' : 'ASC';
@@ -68,9 +59,11 @@ export class SqlInvitationService implements InvitationService {
 
     const items = (
       await this.pool.query<DbInvitation>(
-        `SELECT i.external_id, u.external_id from_user_external_id, i.invited_email
+        `SELECT i.external_id, i.from_user_external_id, i.invited_email
         FROM ${this.schema}.invitations i
-        JOIN ${this.schema}.users u ON u.id = i.from_user_id
+        JOIN ${
+          this.schema
+        }.invitations u ON i.from_user_external_id = u.exteral_id
         WHERE ${UNSANITIZED_whereField} = $1
         
         ${sortValue ? `AND (u.id, u.external_id) ${operator} ($3, $4)` : ''}
@@ -90,15 +83,14 @@ export class SqlInvitationService implements InvitationService {
   }): Promise<Invitation> {
     if (!this.currentUserId) throw new Error('Unauthorized');
 
+    const currentUserEmail = await this.getCurrentUserEmail();
+
     const deleted = (
       await this.pool.query<DbInvitation>(
-        `DELETE FROM ONLY ${this.schema}.invitations i
-        USING ${this.schema}.users u
-        WHERE i.external_id = $1
-          AND u.external_id = $2
-          AND (i.from_user_id = u.id OR i.invited_email = u.email)
-        RETURNING i.id, i.external_id, i.from_user_id, u.external_id from_user_external_id, i.invited_email`,
-        [params.invitationId, this.currentUserId],
+        `DELETE FROM ONLY ${this.schema}.invitations
+        WHERE external_id = $1 AND (from_user_external_id = $2 OR i.invited_email = $3)
+        RETURNING id, external_id, from_user_external_id, invited_email`,
+        [params.invitationId, this.currentUserId, currentUserEmail],
       )
     ).rows.map(using(dbInvitationToInvitation))[0];
 
