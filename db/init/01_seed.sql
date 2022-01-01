@@ -1,7 +1,7 @@
 SET
     TIME ZONE 'UTC';
 
-USE defaultdb;
+USE production;
 
 CREATE TABLE
     users (
