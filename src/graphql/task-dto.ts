@@ -2,7 +2,7 @@ import * as domain from '../domain/v1/api.g';
 import * as schema from '../domain/v1/graph.g';
 import { Page } from '../domain/utils';
 import { resolveParticipantsByTaskId } from './participant-dto';
-import { userDto } from './user-dto';
+import { resolveUserById, userDto } from './user-dto';
 import { nullable, pageInfo } from './utils';
 
 export function taskDto(task: domain.Task): schema.Task {
@@ -11,13 +11,7 @@ export function taskDto(task: domain.Task): schema.Task {
   return {
     ...rest,
     description: nullable(description),
-    owner: async (_, { registry }) => {
-      const user = await registry
-        .get('user-service')
-        .getUser({ userId: ownerId });
-
-      return userDto(user);
-    },
+    owner: resolveUserById(ownerId),
     status: () => {
       switch (status) {
         case 'canceled':
@@ -41,7 +35,7 @@ export const resolveTaskById =
       .get('task-service')
       .getTasks({ taskIds: [taskId] });
 
-    return taskDto(tasks[0]);
+    return taskDto(tasks.items[0]);
   };
 
 export function taskConnection(page: Page<domain.Task>): schema.TaskConnection {

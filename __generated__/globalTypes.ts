@@ -14,6 +14,22 @@ export enum TaskStatus {
   READY = "READY",
 }
 
+export interface EditTaskInput {
+  id: string;
+  description?: string | null;
+  durationMinutes?: number | null;
+  groupSize?: number | null;
+  name?: string | null;
+  status?: string | null;
+  participants?: IdCollection | null;
+}
+
+export interface IdCollection {
+  add?: string[] | null;
+  remove?: string[] | null;
+  set?: string[] | null;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

@@ -19,7 +19,11 @@ export const resolveUserById =
       .get('user-service')
       .getUsers({ userIds: [userId] });
 
-    return userDto(users[0]);
+    const user = users.items[0];
+
+    console.log({ userId, users, user });
+
+    return userDto(users.items[0]);
   };
 
 export function userConnection(page: Page<domain.User>): schema.UserConnection {
