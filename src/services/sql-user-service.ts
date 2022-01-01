@@ -101,7 +101,6 @@ export class SqlUserService implements UserService {
     last?: number | undefined;
     before?: string | undefined;
   }): Promise<UserPage> {
-    console.log(params);
     const { userId } = params;
     if (userId !== this.currentUserId) throw new Error('Forbidden');
 
@@ -113,12 +112,11 @@ export class SqlUserService implements UserService {
     const items = (
       await this.pool.query<DbUser>(
         `SELECT u.* FROM ${this.schema}.friends f
-        JOIN ${this.schema}.users me
-        ON f.user_id = me.id AND me.external_id = $1
         JOIN ${this.schema}.users u
-        ON f.friend_user_id = u.id
+        ON f.friend_user_external_id = u.external_id
+        WHERE f.user_external_id = $1
         
-        ${name ? `WHERE (u.name, u.external_id) ${operator} ($3, $4)` : ''}
+        ${name ? `AND (u.name, u.external_id) ${operator} ($3, $4)` : ''}
         ORDER BY u.name ${orderBy}, u.external_id ${orderBy}
         limit $2`,
         name ? [userId, limit, name, uniqueId] : [userId, limit],
@@ -137,10 +135,8 @@ export class SqlUserService implements UserService {
     if (userId === friendId) throw new Error('Bad Request');
 
     await this.pool.query(
-      `INSERT INTO ${this.schema}.friends (user_id, friend_user_id)
-      SELECT a.id, b.id FROM ${this.schema}.users a JOIN ${this.schema}.users b
-      ON (a.external_id = $1 AND b.external_id = $2)
-      OR (b.external_id = $1 AND a.external_id = $2)`,
+      `INSERT INTO ${this.schema}.friends (user_external_id, friend_user_external_id)
+      VALUES ($1, $2), ($2, $1)`,
       [userId, friendId],
     );
 
@@ -159,18 +155,11 @@ export class SqlUserService implements UserService {
     if (userId !== this.currentUserId) throw new Error('Forbidden');
     if (userId === friendId) throw new Error('Bad Request');
 
-    const [internalUserId, internalFriendId] = (
-      await this.pool.query<{ id: number }>(
-        `SELECT id FROM ${this.schema}.users WHERE external_id = $1 OR external_id = $2`,
-        [userId, friendId],
-      )
-    ).rows.map(({ id }) => id);
-
     await this.pool.query(
       `DELETE FROM ${this.schema}.friends
-        WHERE user_id = $1 AND friend_user_id = $2
-        OR user_id = $2 AND friend_user_id = $1`,
-      [internalUserId, internalFriendId],
+        WHERE (user_external_id = $1 AND friend_user_external_id = $2)
+        OR (user_external_id = $2 AND friend_user_external_id = $1)`,
+      [userId, friendId],
     );
 
     const friend = await this.getUser({ userId: friendId });
