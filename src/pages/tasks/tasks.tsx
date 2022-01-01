@@ -1,8 +1,8 @@
 /* This example requires Tailwind CSS v2.0+ */
 import React from 'react';
-import { useProfile } from '../profile-provider';
+import { useProfile } from '../../profile-provider';
 
-import { Page } from '../templates/page';
+import { Page } from '../../templates/page';
 
 import { useQuery, gql } from '@apollo/client';
 
@@ -12,8 +12,8 @@ import {
   ChevronRightIcon,
   PlusIcon,
 } from '@heroicons/react/solid';
-import { GetTasks } from './__generated__/GetTasks';
 import { Link } from 'react-router-dom';
+import { GetTasksQuery } from './__generated__/GetTasksQuery';
 
 const positions = [
   {
@@ -105,20 +105,42 @@ const positions = [
   },
 ];
 
-const GET_TASKS = gql`
-  query GetTasks {
+export const GET_TASKS = gql`
+  query GetTasksQuery {
     tasks(filter: MINE) {
       nodes {
         id
         name
+        description
         status
+        participants(first: 100) {
+          nodes {
+            user {
+              id
+              name
+              avatarUrl
+            }
+          }
+        }
       }
     }
   }
 `;
 
+const CreateTaskButton: React.VFC<{ className?: string }> = ({ className }) => (
+  <Link
+    to="/tasks/new"
+    className={`inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${
+      !!className ? className : ''
+    }`}
+  >
+    <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
+    New Task
+  </Link>
+);
+
 export const Tasks: React.VFC = () => {
-  const { loading, error, data } = useQuery<GetTasks>(GET_TASKS);
+  const { loading, error, data } = useQuery<GetTasksQuery>(GET_TASKS);
 
   if (!data?.tasks?.nodes?.length) {
     return (
@@ -144,13 +166,14 @@ export const Tasks: React.VFC = () => {
             Get started by creating a new task.
           </p>
           <div className="mt-6">
-            <Link
+            <CreateTaskButton />
+            {/* <Link
               to="/tasks/new"
               className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
               New Task
-            </Link>
+            </Link> */}
           </div>
         </div>
       </Page>
@@ -159,45 +182,40 @@ export const Tasks: React.VFC = () => {
 
   return (
     <Page title="Tasks">
+      <CreateTaskButton />
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <ul role="list" className="divide-y divide-gray-200">
-          {positions.map((position) => (
-            <li key={position.id}>
-              <a href="#" className="block hover:bg-gray-50">
+          {data?.tasks?.nodes.map((task) => (
+            <li key={task.id}>
+              <Link
+                to={`/tasks/edit/${task.id}`}
+                className="block hover:bg-gray-50"
+              >
                 <div className="px-4 py-4 flex items-center sm:px-6">
                   <div className="min-w-0 flex-1 sm:flex sm:items-center sm:justify-between">
                     <div className="truncate">
                       <div className="flex text-sm">
                         <p className="font-medium text-indigo-600 truncate">
-                          {position.title}
+                          {task.name}
                         </p>
-                        <p className="ml-1 flex-shrink-0 font-normal text-gray-500">
+                        {/* <p className="ml-1 flex-shrink-0 font-normal text-gray-500">
                           in {position.department}
-                        </p>
+                        </p> */}
                       </div>
                       <div className="mt-2 flex">
                         <div className="flex items-center text-sm text-gray-500">
-                          <CalendarIcon
-                            className="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400"
-                            aria-hidden="true"
-                          />
-                          <p>
-                            Closing on{' '}
-                            <time dateTime={position.closeDate}>
-                              {position.closeDateFull}
-                            </time>
-                          </p>
+                          <p>{task.description}</p>
                         </div>
                       </div>
                     </div>
                     <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
                       <div className="flex overflow-hidden -space-x-1">
-                        {position.applicants.map((applicant) => (
+                        {task.participants.nodes.map((node) => (
                           <img
-                            key={applicant.email}
+                            key={node.user.id}
                             className="inline-block h-6 w-6 rounded-full ring-2 ring-white"
-                            src={applicant.imageUrl}
-                            alt={applicant.name}
+                            src={node.user.avatarUrl || ''}
+                            alt={node.user.name}
                           />
                         ))}
                       </div>
@@ -210,7 +228,7 @@ export const Tasks: React.VFC = () => {
                     />
                   </div>
                 </div>
-              </a>
+              </Link>
             </li>
           ))}
         </ul>

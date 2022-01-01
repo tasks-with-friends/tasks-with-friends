@@ -11,6 +11,8 @@ export function participantDto(
 ): schema.Participant {
   const { userId, taskId, response, ...rest } = participant;
 
+  console.log({ userId, taskId, response, rest });
+
   return {
     ...participant,
     user: resolveUserById(userId),
@@ -63,22 +65,3 @@ export function participantConnection(
     pageInfo: () => pageInfo(page),
   };
 }
-
-// function convertArgs(args: {
-//   first: number | null;
-//   last: number | null;
-//   after: string | null;
-//   before: string | null;
-// }): {
-//   first?: number;
-//   last?: number;
-//   after?: string;
-//   before?: string;
-// } {
-//   const res: any = {};
-//   if (typeof args.first === 'number') res.first = args.first;
-//   if (typeof args.last === 'number') res.last = args.last;
-//   if (typeof args.after === 'string') res.after = args.after;
-//   if (typeof args.before === 'string') res.before = args.before;
-//   return res;
-// }

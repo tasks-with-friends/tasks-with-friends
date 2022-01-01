@@ -3,6 +3,7 @@ import * as schema from '../domain/v1/graph.g';
 import { taskConnection, taskDto } from './task-dto';
 import { userConnection, userDto } from './user-dto';
 import { paginate } from './utils';
+import { TaskUpdate } from '../domain/v1/api.g';
 
 export type Root = schema.Query & schema.Mutation;
 
@@ -67,12 +68,10 @@ export const root: Root = {
     });
 
     if (userIds) {
-      const participants = await registry
-        .get('task-service')
-        .createParticipants({
-          taskId: task.id,
-          participants: userIds.map((userId) => ({ userId })),
-        });
+      await registry.get('task-service').createParticipants({
+        taskId: task.id,
+        participants: userIds.map((userId) => ({ userId })),
+      });
     }
 
     return { task: taskDto(task) };
@@ -83,8 +82,22 @@ export const root: Root = {
   clearResponse: () => {
     throw new Error('method not implemented');
   },
-  editTask: () => {
-    throw new Error('method not implemented');
+  editTask: async (args, { registry }) => {
+    const { id, name, description, durationMinutes, groupSize, ...rest } =
+      args.input;
+
+    const taskUpdate: TaskUpdate = {};
+    if (name !== null) taskUpdate.name = name;
+    if (description !== null) taskUpdate.description = description;
+    if (durationMinutes !== null) taskUpdate.durationMinutes = durationMinutes;
+    if (groupSize !== null) taskUpdate.groupSize = groupSize;
+
+    const task = await registry.get('task-service').updateTask({
+      taskId: id,
+      taskUpdate,
+    });
+
+    return { task: taskDto(task) };
   },
   inviteFriend: () => {
     throw new Error('method not implemented');
@@ -95,8 +108,12 @@ export const root: Root = {
   removeFriend: () => {
     throw new Error('method not implemented');
   },
-  removeTask: () => {
-    throw new Error('method not implemented');
+  removeTask: async ({ input }, { registry }) => {
+    const task = await registry.get('task-service').removeTask({
+      taskId: input.id,
+    });
+
+    return { task: taskDto(task) };
   },
   setResponse: () => {
     throw new Error('method not implemented');

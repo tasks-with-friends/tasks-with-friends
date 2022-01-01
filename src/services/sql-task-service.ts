@@ -289,7 +289,7 @@ export class SqlTaskService implements TaskService {
           this.schema
         }.participants p
         JOIN ${this.schema}.users u ON p.user_id = u.id
-        JOIN ${this.schema}.tasks t IN p.task_id = t.id
+        JOIN ${this.schema}.tasks t ON p.task_id = t.id
         WHERE t.external_id = $1
         
         ${sortValue ? `AND (p.id, p.external_id) ${operator} ($3, $4)` : ''}
