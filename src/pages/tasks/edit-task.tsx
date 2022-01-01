@@ -14,6 +14,10 @@ import {
   GetTaskQuery,
   GetTaskQueryVariables,
 } from './__generated__/GetTaskQuery';
+import {
+  RemoveTaskMutation,
+  RemoveTaskMutationVariables,
+} from './__generated__/RemoveTaskMutation';
 
 const GET_TASK = gql`
   query GetTaskQuery($id: ID!) {
@@ -42,15 +46,11 @@ const EDIT_TASK = gql`
   }
 `;
 
-const DELETE_TASK = gql`
-  mutation RemoveTaskMutation($input: EditTaskInput!) {
-    editTask(input: $input) {
+const REMOVE_TASK = gql`
+  mutation RemoveTaskMutation($input: RemoveTaskInput!) {
+    removeTask(input: $input) {
       task {
         id
-        name
-        description
-        durationMinutes
-        groupSize
       }
     }
   }
@@ -77,10 +77,14 @@ const EditTaskGuts: React.VFC = () => {
     EditTaskMutationVariables
   >(EDIT_TASK);
 
+  const [removeTask, { loading: removing, error: removeError }] = useMutation<
+    RemoveTaskMutation,
+    RemoveTaskMutationVariables
+  >(REMOVE_TASK);
+
   const handleSubmit: TaskFormSubmitHandler = useCallback(
     ({ diffs }) => {
       if (taskId && Object.keys(diffs).length) {
-        console.log('saving task...', { id: taskId, ...diffs });
         editTask({
           variables: { input: { id: taskId, ...diffs } },
         }).then(() => navigate('/tasks'));
@@ -91,10 +95,26 @@ const EditTaskGuts: React.VFC = () => {
     [taskId, editTask, navigate],
   );
 
+  const handleDelete = useCallback(() => {
+    removeTask({
+      update: (cache, result) => {
+        if (data?.task) {
+          cache.evict({
+            id: cache.identify(data?.task as any),
+          });
+          cache.gc();
+        }
+      },
+      variables: { input: { id: taskId || '' } },
+    }).then(() => navigate('/tasks'));
+  }, [taskId, removeTask, navigate, data?.task]);
+
   if (loading) return <>Loading...</>;
   if (saving) return <>Saving...</>;
+  if (removing) return <>Deleting...</>;
   if (loadError) return <>Error loading.</>;
   if (saveError) return <>Error saving.</>;
+  if (saveError) return <>Error deleting.</>;
   if (!data?.task) return <>Not Found :(</>;
 
   const { description, ...rest } = data.task;
@@ -107,6 +127,7 @@ const EditTaskGuts: React.VFC = () => {
   return (
     <TaskForm
       onSubmit={handleSubmit}
+      onDelete={handleDelete}
       onCancel={() => navigate(-1)}
       value={task}
     />

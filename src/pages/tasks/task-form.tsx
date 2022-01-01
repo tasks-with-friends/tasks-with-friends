@@ -1,5 +1,6 @@
 import { RadioGroup } from '@headlessui/react';
 import React, { useCallback, useState } from 'react';
+import { ConfirmationModal } from '../confirmation-modal';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -133,8 +134,8 @@ export type Task = {
 
 export interface TaskFormPropTypes {
   onSubmit: TaskFormSubmitHandler;
-  onCancel: React.MouseEventHandler<HTMLButtonElement>;
-  onDelete?: React.MouseEventHandler<HTMLButtonElement>;
+  onCancel: () => void;
+  onDelete?: () => void;
   value?: Task;
 }
 
@@ -171,6 +172,12 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
     },
     [onSubmit, value],
   );
+
+  const handleClickDelete = useCallback(() => {
+    setIsOpen(true);
+  }, []);
+
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <form
@@ -248,9 +255,9 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
 
           {!!onDelete && (
             <button
-              onClick={onDelete}
+              onClick={handleClickDelete}
               type="button"
-              className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="ml-3 bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
             >
               Delete
             </button>
@@ -264,6 +271,18 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
           </button>
         </div>
       </div>
+      {!!onDelete && (
+        <ConfirmationModal
+          title="Delete task"
+          primaryButtonText="Delete task"
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+          onConfirm={onDelete}
+        >
+          Are you sure you want to delete this task? It will be permanently
+          removed. This action cannot be undone.
+        </ConfirmationModal>
+      )}
     </form>
   );
 };
