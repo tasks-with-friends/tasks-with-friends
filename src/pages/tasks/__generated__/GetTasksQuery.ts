@@ -48,6 +48,14 @@ export interface GetTasksQuery_tasks_nodes {
   description: string | null;
   status: TaskStatus;
   /**
+   * The estimated amount of time that this task will take. This helps users prioritize their tasks.
+   */
+  durationMinutes: number;
+  /**
+   * The number of participants needed to get started (not included the owner).
+   */
+  groupSize: number;
+  /**
    * The users who have been added to the task.
    */
   participants: GetTasksQuery_tasks_nodes_participants;

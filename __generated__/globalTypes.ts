@@ -30,6 +30,10 @@ export interface IdCollection {
   set?: string[] | null;
 }
 
+export interface RemoveTaskInput {
+  id: string;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { Page } from '../../templates/page';
 import { TaskForm, TaskFormSubmitHandler } from './task-form';
+import { GET_TASKS } from './tasks';
 import {
   AddTaskMutation,
   AddTaskMutationVariables,
@@ -32,28 +33,41 @@ const ADD_TASK = gql`
   }
 `;
 
-export const NewTask: React.VFC = () => {
+const NewTaskGuts: React.VFC = () => {
   const navigate = useNavigate();
 
   useLayoutEffect(() => {
     document.getElementById('name')?.focus();
   }, []);
 
-  const [addTask, { data, loading, error }] = useMutation<
+  const [addTask, { data, loading: saving, error }] = useMutation<
     AddTaskMutation,
     AddTaskMutationVariables
   >(ADD_TASK);
 
+  // TODO: cache result
   const handleSubmit: TaskFormSubmitHandler = useCallback(
     ({ value }) => {
-      const x = addTask({ variables: value }).then(() => navigate('/tasks'));
+      addTask({
+        refetchQueries: [
+          {
+            query: GET_TASKS,
+          },
+        ],
+        awaitRefetchQueries: true,
+        variables: value,
+      }).then(() => navigate('/tasks'));
     },
     [addTask, navigate],
   );
 
-  return (
-    <Page title="New task">
-      <TaskForm onSubmit={handleSubmit} onCancel={() => navigate(-1)} />
-    </Page>
-  );
+  if (saving) return <>Saving ...</>;
+
+  return <TaskForm onSubmit={handleSubmit} onCancel={() => navigate(-1)} />;
 };
+
+export const NewTask: React.VFC = () => (
+  <Page title="New task">
+    <NewTaskGuts />
+  </Page>
+);
