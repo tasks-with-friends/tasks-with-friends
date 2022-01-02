@@ -538,7 +538,8 @@
         "description": { "type": "string" },
         "durationMinutes": { "type": "integer", "format": "int32" },
         "groupSize": { "type": "integer", "format": "int32" },
-        "status": { "$ref": "#/definitions/taskStatus" }
+        "status": { "$ref": "#/definitions/taskStatus" },
+        "participants": { "$ref": "#/definitions/idCollection" }
       }
     },
     "taskStatus": {
@@ -648,6 +649,29 @@
         "startCursor": { "type": "string" },
         "endCursor": { "type": "string" },
         "hasNextPage": { "type": "boolean" }
+      }
+    },
+    "idCollection": {
+      "type": "object",
+      "properties": {
+        "add": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          }
+        },
+        "remove": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          }
+        },
+        "set": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/id"
+          }
+        }
       }
     }
   }

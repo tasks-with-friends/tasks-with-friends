@@ -107,14 +107,30 @@ export const root: Root = {
     throw new Error('method not implemented');
   },
   editTask: async ({ input }, { registry }) => {
-    const { id, name, description, durationMinutes, groupSize, ...rest } =
-      input;
+    const {
+      id,
+      name,
+      description,
+      durationMinutes,
+      groupSize,
+      participants,
+      ...rest
+    } = input;
 
     const taskUpdate: TaskUpdate = {};
     if (name !== null) taskUpdate.name = name;
     if (description !== null) taskUpdate.description = description;
     if (durationMinutes !== null) taskUpdate.durationMinutes = durationMinutes;
     if (groupSize !== null) taskUpdate.groupSize = groupSize;
+
+    if (participants !== null) taskUpdate.participants = {};
+    if (participants?.add !== null) {
+      taskUpdate.participants!.add = participants?.add;
+    }
+    if (participants?.remove !== null) {
+      taskUpdate.participants!.remove = participants?.remove;
+    }
+    // TODO: implement set
 
     const task = await registry.get('task-service').updateTask({
       taskId: id,

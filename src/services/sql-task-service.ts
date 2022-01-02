@@ -21,6 +21,8 @@ export class SqlTaskService implements TaskService {
   ) {}
 
   async createTask(params: { task: NewTask }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     const { name, description, durationMinutes, groupSize } = params.task;
 
     const row = (
@@ -54,6 +56,8 @@ export class SqlTaskService implements TaskService {
     last?: number | undefined;
     before?: string | undefined;
   }): Promise<TaskPage> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     if (params?.taskIds) {
       return this.getTasksById(params?.taskIds);
     } else if (params?.ownerId) {
@@ -162,6 +166,8 @@ export class SqlTaskService implements TaskService {
   }
 
   async getTask(params: { taskId: string }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     return (await this.getTasksById([params.taskId])).items[0];
   }
 
@@ -169,11 +175,25 @@ export class SqlTaskService implements TaskService {
     taskId: string;
     taskUpdate: TaskUpdate;
   }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
+    // TODO: implement participant set
+    if (params.taskUpdate.participants?.set) {
+      throw new Error('Method not implemented');
+    }
+
     const UNSANITIZED_fields: string[] = [];
     const values: any[] = [];
 
-    const { name, description, durationMinutes, groupSize, status } =
-      params.taskUpdate;
+    const { taskId } = params;
+    const {
+      name,
+      description,
+      durationMinutes,
+      groupSize,
+      status,
+      participants,
+    } = params.taskUpdate;
 
     if (typeof name !== 'undefined') {
       UNSANITIZED_fields.push('name');
@@ -196,19 +216,53 @@ export class SqlTaskService implements TaskService {
       values.push(status);
     }
 
-    if (!UNSANITIZED_fields.length) throw new Error('Bad Request');
+    if (
+      !UNSANITIZED_fields.length &&
+      !participants?.add &&
+      !participants?.remove &&
+      !participants?.set
+    ) {
+      throw new Error('Bad Request');
+    }
 
-    await this.pool.query(
-      `UPDATE ${this.schema}.tasks
-      SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 2}`).join(', ')}
-      WHERE external_id = $1`,
-      [params.taskId, ...values],
-    );
+    if (UNSANITIZED_fields.length) {
+      const affected = (
+        await this.pool.query(
+          `UPDATE ${this.schema}.tasks
+      SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 3}`).join(', ')}
+      WHERE owner_external_id = $1 AND external_id = $2`,
+          [this.currentUserId, params.taskId, ...values],
+        )
+      ).rowCount;
+
+      if (!affected) throw new Error('Not found');
+    }
+
+    if (participants?.add) {
+      await this.createParticipants({
+        taskId,
+        participants: participants.add.map((userId) => ({ userId })),
+      });
+    }
+
+    if (participants?.remove) {
+      await this.pool.query<DbParticipant>(
+        `DELETE FROM ONLY ${this.schema}.participants
+          WHERE task_external_id = $1 AND user_external_id IN (${participants?.remove.map(
+            (_, i) => `$${i + 2}`,
+          )})`,
+        [params.taskId, ...participants?.remove],
+      );
+    }
+
+    // TODO: implement participant set
 
     return this.getTask({ taskId: params.taskId });
   }
 
   async removeTask(params: { taskId: string }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     await this.pool.query<DbTask>(
       `DELETE FROM ONLY ${this.schema}.participants
         WHERE task_external_id = $1`,
@@ -233,6 +287,8 @@ export class SqlTaskService implements TaskService {
     taskId: string;
     participants: NewParticipant[];
   }): Promise<ParticipantList> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     const userIds = params.participants.map((p) => p.userId);
 
     const items = (
@@ -256,6 +312,8 @@ export class SqlTaskService implements TaskService {
     last?: number | undefined;
     before?: string | undefined;
   }): Promise<ParticipantPage> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     const { uniqueId, count, limit, direction } = parsePage(25, params);
     const orderBy = direction === 'forward' ? 'ASC' : 'DESC';
     const operator = direction === 'forward' ? '>=' : '<=';
@@ -289,6 +347,8 @@ export class SqlTaskService implements TaskService {
     participantId: string;
     participant: ParticipantUpdate;
   }): Promise<Participant> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     const UNSANITIZED_fields: string[] = [];
     const values: any[] = [];
 
@@ -320,6 +380,8 @@ export class SqlTaskService implements TaskService {
     taskId: string;
     participantId: string;
   }): Promise<Participant> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
     // TODO: ensure the current user is the owner
     const deleted = (
       await this.pool.query<DbParticipant>(
@@ -339,6 +401,11 @@ export class SqlTaskService implements TaskService {
     taskId: string;
     participantId: string;
   }): Promise<void> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+    if (params.participantId !== this.currentUserId) {
+      throw new Error('Forbidden');
+    }
+
     const updated = (
       await this.pool.query(
         `UPDATE ${this.schema}.participants
