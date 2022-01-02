@@ -8,11 +8,16 @@ import { ConfirmationModal } from './confirmation-modal';
 import {
   GetFriendsQuery,
   GetFriendsQuery_outgoingInvitations_nodes as OutgoingInvitation,
+  GetFriendsQuery_friends_nodes as Friend,
 } from './__generated__/GetFriendsQuery';
 import {
   InviteFriendMutation,
   InviteFriendMutationVariables,
 } from './__generated__/InviteFriendMutation';
+import {
+  RemoveFriendMutation,
+  RemoveFriendMutationVariables,
+} from './__generated__/RemoveFriendMutation';
 import {
   RemoveInvitationMutation,
   RemoveInvitationMutationVariables,
@@ -52,6 +57,14 @@ const INVITE_FRIEND = gql`
 const REMOVE_INVITATION = gql`
   mutation RemoveInvitationMutation($input: RemoveInviteInput!) {
     removeInvite(input: $input) {
+      success
+    }
+  }
+`;
+
+const REMOVE_FRIEND = gql`
+  mutation RemoveFriendMutation($input: RemoveFriendInput!) {
+    removeFriend(input: $input) {
       success
     }
   }
@@ -124,6 +137,79 @@ const InviteFriendButton: React.VFC<{ className?: string }> = ({
         <span>{loading ? 'Sending ...' : 'Invite'}</span>
       </button>
     </form>
+  );
+};
+
+const FriendItem: React.VFC<{
+  person: Friend;
+}> = ({ person }) => {
+  const [removeFriend, { loading: removing }] = useMutation<
+    RemoveFriendMutation,
+    RemoveFriendMutationVariables
+  >(REMOVE_FRIEND);
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleClick = useCallback(() => {
+    setIsOpen(true);
+  }, []);
+
+  const handleDelete = useCallback(() => {
+    removeFriend({
+      update: (cache) => {
+        if (person) {
+          cache.evict({
+            id: cache.identify(person as any),
+          });
+          cache.gc();
+        }
+      },
+      variables: { input: { userId: person.id } },
+    });
+  }, [removeFriend, person]);
+
+  return (
+    <>
+      <li className="py-4">
+        <div className="flex items-center space-x-4">
+          <div className="flex-shrink-0">
+            <img
+              className="h-8 w-8 rounded-full"
+              src={person.avatarUrl || ''}
+              alt=""
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">
+              {person.name}
+            </p>
+            <p className="text-sm text-gray-500 truncate">{person.email}</p>
+          </div>
+          <div>
+            <button
+              type="button"
+              disabled={removing}
+              onClick={handleClick}
+              className="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50"
+            >
+              {removing ? 'Removing...' : 'Remove'}
+            </button>
+          </div>
+        </div>
+      </li>
+
+      <ConfirmationModal
+        title={`Remove ${person.name}`}
+        primaryButtonText="Remove "
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        onConfirm={handleDelete}
+      >
+        Are you sure you want to remove {person.name} as a friend? If you remove
+        them, they will be removed from all of your tasks. You can always invite
+        them again later, but you will need to re-add them to any tasks.
+      </ConfirmationModal>
+    </>
   );
 };
 
@@ -248,33 +334,7 @@ export const FriendsGuts: React.VFC = () => {
       <div className="flow-root mt-6">
         <ul role="list" className="-my-5 divide-y divide-gray-200">
           {data.friends.nodes.map((person) => (
-            <li key={person.id} className="py-4">
-              <div className="flex items-center space-x-4">
-                <div className="flex-shrink-0">
-                  <img
-                    className="h-8 w-8 rounded-full"
-                    src={person.avatarUrl || ''}
-                    alt=""
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">
-                    {person.name}
-                  </p>
-                  <p className="text-sm text-gray-500 truncate">
-                    {person.email}
-                  </p>
-                </div>
-                <div>
-                  <a
-                    href="#"
-                    className="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Remove
-                  </a>
-                </div>
-              </div>
-            </li>
+            <FriendItem key={person.id} person={person} />
           ))}
         </ul>
       </div>
