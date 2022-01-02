@@ -6,10 +6,10 @@ import React, { useCallback, useState } from 'react';
 import { Page } from '../templates/page';
 import { ConfirmationModal } from './confirmation-modal';
 import {
-  GetFriendsQuery,
-  GetFriendsQuery_outgoingInvitations_nodes as OutgoingInvitation,
-  GetFriendsQuery_friends_nodes as Friend,
-} from './__generated__/GetFriendsQuery';
+  GetFriendsPageQuery,
+  GetFriendsPageQuery_outgoingInvitations_nodes as OutgoingInvitation,
+  GetFriendsPageQuery_friends_nodes as Friend,
+} from './__generated__/GetFriendsPageQuery';
 import {
   InviteFriendMutation,
   InviteFriendMutationVariables,
@@ -23,8 +23,8 @@ import {
   RemoveInvitationMutationVariables,
 } from './__generated__/RemoveInvitationMutation';
 
-const GET_FRIENDS = gql`
-  query GetFriendsQuery {
+const GET_FRIENDS_PAGE = gql`
+  query GetFriendsPageQuery {
     outgoingInvitations {
       nodes {
         id
@@ -88,7 +88,7 @@ const InviteFriendButton: React.VFC<{ className?: string }> = ({
         inviteFriend({
           refetchQueries: [
             {
-              query: GET_FRIENDS,
+              query: GET_FRIENDS_PAGE,
             },
           ],
           awaitRefetchQueries: true,
@@ -291,7 +291,8 @@ const InvitationList: React.VFC<{
 };
 
 export const FriendsGuts: React.VFC = () => {
-  const { data, loading, error } = useQuery<GetFriendsQuery>(GET_FRIENDS);
+  const { data, loading, error } =
+    useQuery<GetFriendsPageQuery>(GET_FRIENDS_PAGE);
 
   if (loading) return <>Loading...</>;
   if (error) return <>Error loading.</>;

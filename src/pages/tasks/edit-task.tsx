@@ -1,7 +1,13 @@
 /* This example requires Tailwind CSS v2.0+ */
-import { gql, useMutation, useQuery } from '@apollo/client';
+import {
+  gql,
+  InternalRefetchQueryDescriptor,
+  useMutation,
+  useQuery,
+} from '@apollo/client';
 import React, { useCallback, useLayoutEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { EditTaskInput } from '../../../__generated__/globalTypes';
 
 import { Page } from '../../templates/page';
 import { Task, TaskForm, TaskFormSubmitHandler } from './task-form';
@@ -28,6 +34,17 @@ const GET_TASK = gql`
       durationMinutes
       groupSize
       status
+      participants {
+        nodes {
+          id
+          user {
+            id
+            name
+            email
+            avatarUrl
+          }
+        }
+      }
     }
   }
 `;
@@ -84,9 +101,30 @@ const EditTaskGuts: React.VFC = () => {
 
   const handleSubmit: TaskFormSubmitHandler = useCallback(
     ({ diffs }) => {
+      const { addUserIds, removeUserIds, ...restOfTheDiff } = diffs;
+
       if (taskId && Object.keys(diffs).length) {
+        const input: EditTaskInput = { id: taskId, ...restOfTheDiff };
+
+        const refetchQueries: InternalRefetchQueryDescriptor[] = [
+          { query: GET_TASK, variables: { id: taskId || '' } },
+        ];
+
+        let awaitRefetchQueries = false;
+
+        if (addUserIds?.length || removeUserIds?.length) {
+          input.participants = {};
+          if (addUserIds?.length) input.participants.add = addUserIds;
+          if (removeUserIds?.length) input.participants.remove = removeUserIds;
+
+          refetchQueries.push({ query: GET_TASKS });
+          awaitRefetchQueries = true;
+        }
+
         editTask({
-          variables: { input: { id: taskId, ...diffs } },
+          refetchQueries,
+          awaitRefetchQueries,
+          variables: { input },
         }).then(() => navigate('/tasks'));
       } else {
         navigate('/tasks');
@@ -117,10 +155,17 @@ const EditTaskGuts: React.VFC = () => {
   if (saveError) return <>Error deleting.</>;
   if (!data?.task) return <>Not Found :(</>;
 
-  const { description, ...rest } = data.task;
+  const { description, participants, ...rest } = data.task;
 
   const task: Task = {
     description: description === null ? undefined : description,
+    participants: participants.nodes.map((p) => ({
+      participantId: p.id,
+      id: p.user.id,
+      email: p.user.email,
+      name: p.user.name,
+      avatarUrl: p.user.avatarUrl || undefined,
+    })),
     ...rest,
   };
 
