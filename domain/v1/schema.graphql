@@ -55,6 +55,7 @@ type Mutation {
   removeFriend(input: RemoveFriendInput!): RemoveFriendPayload!
   acceptInvite(input: AcceptInviteInput!): AcceptInvitePayload!
   rejectInvite(input: RejectInviteInput!): RejectInvitePayload!
+  removeInvite(input: RemoveInviteInput!): RemoveInvitePayload!
   addTask(input: AddTaskInput!): AddTaskPayload!
   setUserStatus(input: SetUserStatusInput!): SetUserStatusPayload!
   editTask(input: EditTaskInput!): EditTaskPayload!
@@ -101,6 +102,14 @@ input RejectInviteInput {
 }
 
 type RejectInvitePayload {
+  success: Boolean
+}
+
+input RemoveInviteInput {
+  id: String!
+}
+
+type RemoveInvitePayload {
   success: Boolean
 }
 
