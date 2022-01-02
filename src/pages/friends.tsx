@@ -183,8 +183,8 @@ const OutgoingInvitationItem: React.VFC<{
         setIsOpen={setIsOpen}
         onConfirm={handleDelete}
       >
-        Are you sure you want to delete this task? It will be permanently
-        removed. This action cannot be undone.
+        Are you sure you want to delete this invitation? Once removed, the other
+        user will no longer be able to accept it. This action cannot be undone.
       </ConfirmationModal>
     </>
   );
@@ -194,7 +194,7 @@ const InvitationList: React.VFC<{
   invitations?: OutgoingInvitation[] | null;
 }> = ({ invitations }) => {
   return Array.isArray(invitations) ? (
-    <div className="flow-root mt-6">
+    <div className="flow-root mt-6 mx-auto sm:max-w-md">
       <ul role="list" className="-my-5 divide-y divide-gray-200">
         {invitations.map((invitation) => (
           <OutgoingInvitationItem invitation={invitation} />
