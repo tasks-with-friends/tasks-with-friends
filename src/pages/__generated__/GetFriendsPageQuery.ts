@@ -6,10 +6,10 @@
 import { UserStatus } from "./../../../__generated__/globalTypes";
 
 // ====================================================
-// GraphQL query operation: GetFriendsQuery
+// GraphQL query operation: GetFriendsPageQuery
 // ====================================================
 
-export interface GetFriendsQuery_outgoingInvitations_nodes {
+export interface GetFriendsPageQuery_outgoingInvitations_nodes {
   __typename: "Invitation";
   id: string;
   /**
@@ -18,12 +18,12 @@ export interface GetFriendsQuery_outgoingInvitations_nodes {
   invitedEmail: string;
 }
 
-export interface GetFriendsQuery_outgoingInvitations {
+export interface GetFriendsPageQuery_outgoingInvitations {
   __typename: "InvitationConnection";
-  nodes: GetFriendsQuery_outgoingInvitations_nodes[];
+  nodes: GetFriendsPageQuery_outgoingInvitations_nodes[];
 }
 
-export interface GetFriendsQuery_friends_nodes {
+export interface GetFriendsPageQuery_friends_nodes {
   __typename: "User";
   /**
    * The unique ID for this user
@@ -47,20 +47,20 @@ export interface GetFriendsQuery_friends_nodes {
   status: UserStatus;
 }
 
-export interface GetFriendsQuery_friends {
+export interface GetFriendsPageQuery_friends {
   __typename: "UserConnection";
-  nodes: GetFriendsQuery_friends_nodes[];
+  nodes: GetFriendsPageQuery_friends_nodes[];
 }
 
-export interface GetFriendsQuery {
+export interface GetFriendsPageQuery {
   /**
    * Invitations the current user has sent to others.
    * When the other user accepts the invitation, they and the current user
    * will be see each other in their friend lists.
    */
-  outgoingInvitations: GetFriendsQuery_outgoingInvitations;
+  outgoingInvitations: GetFriendsPageQuery_outgoingInvitations;
   /**
    * The friends of the currently logged in user.
    */
-  friends: GetFriendsQuery_friends;
+  friends: GetFriendsPageQuery_friends;
 }

@@ -1,6 +1,19 @@
-import { RadioGroup } from '@headlessui/react';
-import React, { useCallback, useState } from 'react';
+import { Listbox, RadioGroup, Transition } from '@headlessui/react';
+import React, {
+  Fragment,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import { ConfirmationModal } from '../confirmation-modal';
+import { CheckIcon, SelectorIcon } from '@heroicons/react/solid';
+import { gql, useQuery } from '@apollo/client';
+import {
+  GetFriendPickerQuery,
+  GetFriendPickerQuery_friends_nodes as Friend,
+} from './__generated__/GetFriendPickerQuery';
+import { useProfile } from '../../profile-provider';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -122,7 +135,7 @@ const RadioButtons: React.VFC<{
 
 export type TaskFormSubmitHandler = (formData: {
   value: Task;
-  diffs: Partial<Task>;
+  diffs: TaskDiff;
 }) => void;
 
 export type Task = {
@@ -130,6 +143,22 @@ export type Task = {
   description?: string;
   durationMinutes: number;
   groupSize: number;
+  participants: Participant[];
+};
+
+export type TaskDiff = Partial<
+  Omit<Task, 'participants'> & {
+    addUserIds: string[];
+    removeUserIds: string[];
+  }
+>;
+
+export type Participant = {
+  participantId?: string;
+  id: string;
+  name: string;
+  email: string;
+  avatarUrl?: string;
 };
 
 export interface TaskFormPropTypes {
@@ -145,6 +174,8 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
   onDelete,
   value,
 }) => {
+  const [participants, setParticipants] = useState(value?.participants || []);
+
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = useCallback(
     (e) => {
       const form = e.target as HTMLFormElement;
@@ -155,22 +186,48 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
         description: String(formData.get('description')),
         durationMinutes: Number(formData.get('durationMinutes')),
         groupSize: Number(formData.get('groupSize')),
+        participants,
       };
 
-      const diffs: Partial<Task> = {};
+      const diffs: TaskDiff = {};
 
       Object.keys(data).forEach((key) => {
+        if (key === 'participants') return;
         if (!value || data[key] !== value[key]) {
           diffs[key] = data[key];
         }
       });
+      const addUserIds = participants
+        .filter(
+          (currentPartcipant) =>
+            !value?.participants?.find(
+              (originalParticipant) =>
+                currentPartcipant.id === originalParticipant.id,
+            ),
+        )
+        .map((x) => x.id);
+
+      const removeUserIds = value?.participants
+        ?.filter(
+          (originalParticipant) =>
+            !participants.find(
+              (currentPartcipant) =>
+                currentPartcipant.id === originalParticipant.id,
+            ),
+        )
+        ?.map((x) => x.id);
+
+      if (addUserIds.length) diffs.addUserIds = addUserIds;
+      if (removeUserIds?.length) diffs.removeUserIds = removeUserIds;
+
+      console.log({ data, diffs });
 
       onSubmit({ value: data, diffs });
 
       e.preventDefault();
       return false;
     },
-    [onSubmit, value],
+    [onSubmit, value, participants],
   );
 
   const handleClickDelete = useCallback(() => {
@@ -178,6 +235,26 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
   }, []);
 
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    setParticipants(value?.participants || []);
+  }, [value?.participants]);
+
+  const handleRemovePartcipant = useCallback(
+    (userId: string) => {
+      setParticipants(participants.filter((p) => p.id !== userId));
+    },
+    [participants],
+  );
+
+  const handleAddParticipant = useCallback(
+    (paricipant: Participant) => {
+      setParticipants([...participants, paricipant]);
+    },
+    [participants],
+  );
+
+  const profile = useProfile();
 
   return (
     <form
@@ -241,6 +318,41 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
             />
           </div>
         </div>
+        <ul>
+          {participants.map((person) => (
+            <li className="py-4">
+              <div className="flex items-center space-x-4">
+                <div className="flex-shrink-0">
+                  <img
+                    className="h-8 w-8 rounded-full"
+                    src={person.avatarUrl || ''}
+                    alt=""
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {person.name}
+                  </p>
+                  <p className="text-sm text-gray-500 truncate">
+                    {person.email}
+                  </p>
+                </div>
+                {profile.id !== person.id && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemovePartcipant(person.id)}
+                      className="inline-flex items-center shadow-sm px-2.5 py-0.5 border border-gray-300 text-sm leading-5 font-medium rounded-full text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+            </li>
+          ))}
+        </ul>
+        <UserPicker skip={participants} onSelect={handleAddParticipant} />
       </div>
 
       <div className="pt-5">
@@ -284,5 +396,140 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
         </ConfirmationModal>
       )}
     </form>
+  );
+};
+
+const GET_FRIEND_PICKER = gql`
+  query GetFriendPickerQuery {
+    friends {
+      nodes {
+        id
+        name
+        email
+        avatarUrl
+        status
+      }
+    }
+  }
+`;
+
+export const UserPicker: React.VFC<{
+  onSelect: (participant: Participant) => void;
+  skip?: { id: string }[];
+}> = ({ skip, onSelect }) => {
+  const { data, loading, error } =
+    useQuery<GetFriendPickerQuery>(GET_FRIEND_PICKER);
+
+  const friends: Friend[] = useMemo(
+    () =>
+      (data?.friends?.nodes || []).filter(
+        (friend) => !skip?.find?.((x) => x.id === friend.id),
+      ),
+    [data?.friends?.nodes, skip],
+  );
+
+  const [selected, setSelected] = useState<Friend | undefined>(undefined);
+
+  const handleChange = useCallback(
+    (friend: Friend) => {
+      // setSelected(friend);
+      onSelect({
+        id: friend.id,
+        name: friend.name,
+        email: friend.email,
+        avatarUrl: friend.avatarUrl || undefined,
+      });
+    },
+    [onSelect],
+  );
+
+  return (
+    <Listbox value={selected} onChange={handleChange}>
+      {({ open }) => (
+        <>
+          <Listbox.Label className="block text-sm font-medium text-gray-700">
+            Assigned to
+          </Listbox.Label>
+          <div className="mt-1 relative">
+            <Listbox.Button className="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+              <span className="flex items-center">
+                {selected ? (
+                  <>
+                    <img
+                      src={selected.avatarUrl || ''}
+                      alt=""
+                      className="flex-shrink-0 h-6 w-6 rounded-full"
+                    />
+                    <span className="ml-3 block truncate">{selected.name}</span>
+                  </>
+                ) : (
+                  <span className="ml-3 block truncate">Select a friend</span>
+                )}
+              </span>
+              <span className="ml-3 absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <SelectorIcon
+                  className="h-5 w-5 text-gray-400"
+                  aria-hidden="true"
+                />
+              </span>
+            </Listbox.Button>
+
+            <Transition
+              show={open}
+              as={Fragment}
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Listbox.Options className="absolute z-10 mt-1 w-full bg-white shadow-lg max-h-56 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                {friends.map((person) => (
+                  <Listbox.Option
+                    key={person.id}
+                    className={({ active }) =>
+                      classNames(
+                        active ? 'text-white bg-indigo-600' : 'text-gray-900',
+                        'cursor-default select-none relative py-2 pl-3 pr-9',
+                      )
+                    }
+                    value={person}
+                  >
+                    {({ selected: isSelected, active }) => (
+                      <>
+                        <div className="flex items-center">
+                          <img
+                            src={person.avatarUrl || ''}
+                            alt=""
+                            className="flex-shrink-0 h-6 w-6 rounded-full"
+                          />
+                          <span
+                            className={classNames(
+                              isSelected ? 'font-semibold' : 'font-normal',
+                              'ml-3 block truncate',
+                            )}
+                          >
+                            {person.name}
+                          </span>
+                        </div>
+
+                        {isSelected ? (
+                          <span
+                            className={classNames(
+                              active ? 'text-white' : 'text-indigo-600',
+                              'absolute inset-y-0 right-0 flex items-center pr-4',
+                            )}
+                          >
+                            <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                          </span>
+                        ) : null}
+                      </>
+                    )}
+                  </Listbox.Option>
+                ))}
+              </Listbox.Options>
+            </Transition>
+          </div>
+        </>
+      )}
+    </Listbox>
   );
 };
