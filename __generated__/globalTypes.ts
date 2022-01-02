@@ -20,6 +20,10 @@ export enum UserStatus {
   IDLE = "IDLE",
 }
 
+export interface AcceptInviteInput {
+  id: string;
+}
+
 export interface EditTaskInput {
   id: string;
   description?: string | null;
@@ -38,6 +42,14 @@ export interface IdCollection {
 
 export interface InviteFriendInput {
   email: string;
+}
+
+export interface RejectInviteInput {
+  id: string;
+}
+
+export interface RemoveFriendInput {
+  userId: string;
 }
 
 export interface RemoveInviteInput {

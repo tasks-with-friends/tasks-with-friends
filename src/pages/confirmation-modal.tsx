@@ -23,8 +23,6 @@ export const ConfirmationModal: React.FC<ConfirmationModalPropTypes> = ({
   onCancel,
   children,
 }) => {
-  // const [open, setOpen] = useState(true);
-
   const cancelButtonRef = useRef(null);
 
   const handleConfirm = useCallback(() => {

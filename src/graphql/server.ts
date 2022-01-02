@@ -3,7 +3,7 @@ import * as schema from '../domain/v1/graph.g';
 import { taskConnection, taskDto } from './task-dto';
 import { userConnection, userDto } from './user-dto';
 import { paginate } from './utils';
-import { TaskUpdate } from '../domain/v1/api.g';
+import { TaskPage, TaskUpdate } from '../domain/v1/api.g';
 
 export type Root = schema.Query & schema.Mutation;
 
@@ -50,15 +50,26 @@ export const root: Root = {
 
     return taskDto(tasks.items[0]);
   },
-  tasks: async (args, { profile, registry }) => {
-    const tasks = await registry
-      .get('task-service')
-      .getTasks({ ownerId: profile.id, ...paginate(args) });
-
+  tasks: async ({ filter, ...page }, { profile, registry }) => {
+    const service = registry.get('task-service');
+    let tasks: TaskPage;
+    if (filter === schema.TaskFilter.MINE) {
+      tasks = await service.getTasks({
+        ownerId: profile.id,
+        ...paginate(page),
+      });
+    } else if (filter === schema.TaskFilter.ALL) {
+      tasks = await service.getTasks({
+        participantId: profile.id,
+        ...paginate(page),
+      });
+    } else {
+      throw new Error(`Filter not supported: ${filter}`);
+    }
     return taskConnection(tasks);
   },
-  addTask: async (args, { registry }) => {
-    const { userIds, description, ...rest } = args.input;
+  addTask: async ({ input }, { registry }) => {
+    const { userIds, description, ...rest } = input;
 
     const task = await registry.get('task-service').createTask({
       task: {
@@ -76,8 +87,16 @@ export const root: Root = {
 
     return { task: taskDto(task) };
   },
-  acceptInvite: () => {
-    throw new Error('method not implemented');
+  acceptInvite: async ({ input }, { profile, registry }) => {
+    const invitation = await registry
+      .get('invitation-service')
+      .removeInvitation({ invitationId: input.id });
+
+    const user = await registry
+      .get('user-service')
+      .addFriendToUser({ userId: profile.id, friendId: invitation.fromUserId });
+
+    return { friend: userDto(user) };
   },
   removeInvite: async ({ input }, { registry }) => {
     const service = registry.get('invitation-service');
@@ -87,9 +106,9 @@ export const root: Root = {
   clearResponse: () => {
     throw new Error('method not implemented');
   },
-  editTask: async (args, { registry }) => {
+  editTask: async ({ input }, { registry }) => {
     const { id, name, description, durationMinutes, groupSize, ...rest } =
-      args.input;
+      input;
 
     const taskUpdate: TaskUpdate = {};
     if (name !== null) taskUpdate.name = name;
@@ -111,11 +130,18 @@ export const root: Root = {
 
     return { invitation: invitationDto(invitation) };
   },
-  rejectInvite: () => {
-    throw new Error('method not implemented');
+  rejectInvite: async ({ input }, { registry }) => {
+    await registry
+      .get('invitation-service')
+      .removeInvitation({ invitationId: input.id });
+    return { success: true };
   },
-  removeFriend: () => {
-    throw new Error('method not implemented');
+  removeFriend: async ({ input }, { profile, registry }) => {
+    await registry
+      .get('user-service')
+      .removeFriendFromUser({ userId: profile.id, friendId: input.userId });
+
+    return { success: true };
   },
   removeTask: async ({ input }, { registry }) => {
     const task = await registry.get('task-service').removeTask({
