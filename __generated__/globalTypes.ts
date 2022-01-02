@@ -14,6 +14,12 @@ export enum TaskStatus {
   READY = "READY",
 }
 
+export enum UserStatus {
+  AWAY = "AWAY",
+  FLOW = "FLOW",
+  IDLE = "IDLE",
+}
+
 export interface EditTaskInput {
   id: string;
   description?: string | null;
@@ -28,6 +34,14 @@ export interface IdCollection {
   add?: string[] | null;
   remove?: string[] | null;
   set?: string[] | null;
+}
+
+export interface InviteFriendInput {
+  email: string;
+}
+
+export interface RemoveInviteInput {
+  id: string;
 }
 
 export interface RemoveTaskInput {

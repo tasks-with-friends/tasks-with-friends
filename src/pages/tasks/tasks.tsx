@@ -1,18 +1,9 @@
-/* This example requires Tailwind CSS v2.0+ */
 import React from 'react';
-import { useProfile } from '../../profile-provider';
+import { useQuery, gql } from '@apollo/client';
+import { ChevronRightIcon, PlusIcon } from '@heroicons/react/solid';
+import { Link } from 'react-router-dom';
 
 import { Page } from '../../templates/page';
-
-import { useQuery, gql } from '@apollo/client';
-
-/* This example requires Tailwind CSS v2.0+ */
-import {
-  CalendarIcon,
-  ChevronRightIcon,
-  PlusIcon,
-} from '@heroicons/react/solid';
-import { Link } from 'react-router-dom';
 import { GetTasksQuery } from './__generated__/GetTasksQuery';
 
 export const GET_TASKS = gql`

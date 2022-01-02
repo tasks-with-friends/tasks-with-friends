@@ -1,4 +1,4 @@
-import { invitationConnection } from './invitation-dto';
+import { invitationConnection, invitationDto } from './invitation-dto';
 import * as schema from '../domain/v1/graph.g';
 import { taskConnection, taskDto } from './task-dto';
 import { userConnection, userDto } from './user-dto';
@@ -79,6 +79,11 @@ export const root: Root = {
   acceptInvite: () => {
     throw new Error('method not implemented');
   },
+  removeInvite: async ({ input }, { registry }) => {
+    const service = registry.get('invitation-service');
+    await service.removeInvitation({ invitationId: input.id });
+    return { success: true };
+  },
   clearResponse: () => {
     throw new Error('method not implemented');
   },
@@ -99,8 +104,12 @@ export const root: Root = {
 
     return { task: taskDto(task) };
   },
-  inviteFriend: () => {
-    throw new Error('method not implemented');
+  inviteFriend: async ({ input }, { registry }) => {
+    const invitation = await registry
+      .get('invitation-service')
+      .createInvitation({ invitation: { invitedEmail: input.email } });
+
+    return { invitation: invitationDto(invitation) };
   },
   rejectInvite: () => {
     throw new Error('method not implemented');

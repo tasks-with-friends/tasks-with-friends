@@ -19,12 +19,16 @@ export class SqlInvitationService implements InvitationService {
   }): Promise<Invitation> {
     if (!this.currentUserId) throw new Error('Unauthorized');
 
+    // TODO: validate email address format
+
+    const { invitedEmail } = params.invitation;
+
     const invitation = (
       await this.pool.query<DbInvitation>(
         `INSERT INTO ${this.schema}.invitations (from_user_external_id, invited_email)
         VALUES ($1, $2)
         RETURNING external_id, from_user_external_id, invited_email`,
-        [this.currentUserId, params.invitation.invitedEmail],
+        [this.currentUserId, invitedEmail.toLowerCase()],
       )
     ).rows.map(using(dbInvitationToInvitation))[0];
 
@@ -52,7 +56,7 @@ export class SqlInvitationService implements InvitationService {
     const UNSANITIZED_whereField =
       filter === 'incoming' ? 'i.invited_email' : 'i.from_user_external_id';
 
-    const { uniqueId, count, limit, direction } = parsePage(25, params);
+    const { uniqueId, count, limit, direction } = parsePage(25, page);
     const orderBy = direction === 'forward' ? 'DESC' : 'ASC';
     const operator = direction === 'forward' ? '<=' : '>=';
     const sortValue = await this.getSortValue<number>('id', uniqueId);
@@ -61,9 +65,7 @@ export class SqlInvitationService implements InvitationService {
       await this.pool.query<DbInvitation>(
         `SELECT i.external_id, i.from_user_external_id, i.invited_email
         FROM ${this.schema}.invitations i
-        JOIN ${
-          this.schema
-        }.invitations u ON i.from_user_external_id = u.exteral_id
+        JOIN ${this.schema}.users u ON i.from_user_external_id = u.external_id
         WHERE ${UNSANITIZED_whereField} = $1
         
         ${sortValue ? `AND (u.id, u.external_id) ${operator} ($3, $4)` : ''}
@@ -88,7 +90,7 @@ export class SqlInvitationService implements InvitationService {
     const deleted = (
       await this.pool.query<DbInvitation>(
         `DELETE FROM ONLY ${this.schema}.invitations
-        WHERE external_id = $1 AND (from_user_external_id = $2 OR i.invited_email = $3)
+        WHERE external_id = $1 AND (from_user_external_id = $2 OR invited_email = $3)
         RETURNING id, external_id, from_user_external_id, invited_email`,
         [params.invitationId, this.currentUserId, currentUserEmail],
       )
@@ -104,7 +106,7 @@ export class SqlInvitationService implements InvitationService {
 
     const row = (
       await this.pool.query<{ email: string }>(
-        `SELECT email FROM ${this.schema}.user
+        `SELECT email FROM ${this.schema}.users
         WHERE external_id = $1
         LIMIT 1`,
         [this.currentUserId],
