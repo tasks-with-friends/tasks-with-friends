@@ -4,6 +4,7 @@ import { taskConnection, taskDto } from './task-dto';
 import { userConnection, userDto } from './user-dto';
 import { paginate } from './utils';
 import { TaskPage, TaskUpdate } from '../domain/v1/api.g';
+import { participantDto } from './participant-dto';
 
 export type Root = schema.Query & schema.Mutation;
 
@@ -103,9 +104,6 @@ export const root: Root = {
     await service.removeInvitation({ invitationId: input.id });
     return { success: true };
   },
-  clearResponse: () => {
-    throw new Error('method not implemented');
-  },
   editTask: async ({ input }, { registry }) => {
     const {
       id,
@@ -166,8 +164,24 @@ export const root: Root = {
 
     return { task: taskDto(task) };
   },
-  setResponse: () => {
-    throw new Error('method not implemented');
+  setResponse: async ({ input }, { registry }) => {
+    const participant = await registry.get('task-service').updateParticipant({
+      taskId: input.taskId,
+      participantId: input.participantId,
+      participant: {
+        response:
+          input.response === schema.ParticipantResponse.YES ? 'yes' : 'no',
+      },
+    });
+
+    return { participant: participantDto(participant) };
+  },
+  clearResponse: async ({ input }, { registry }) => {
+    const participant = await registry
+      .get('task-service')
+      .clearParticipantResponse(input);
+
+    return { participant: participantDto(participant) };
   },
   setUserStatus: () => {
     throw new Error('method not implemented');

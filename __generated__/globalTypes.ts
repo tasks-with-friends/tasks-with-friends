@@ -7,11 +7,16 @@
 // START Enums and Input Objects
 //==============================================================
 
+export enum ParticipantResponse {
+  NO = "NO",
+  YES = "YES",
+}
+
 export enum TaskStatus {
-  CANCELED = "CANCELED",
   DONE = "DONE",
   IN_PROGRESS = "IN_PROGRESS",
   READY = "READY",
+  WAITING = "WAITING",
 }
 
 export enum UserStatus {
@@ -22,6 +27,11 @@ export enum UserStatus {
 
 export interface AcceptInviteInput {
   id: string;
+}
+
+export interface ClearResponseInput {
+  taskId: string;
+  participantId: string;
 }
 
 export interface EditTaskInput {
@@ -58,6 +68,12 @@ export interface RemoveInviteInput {
 
 export interface RemoveTaskInput {
   id: string;
+}
+
+export interface SetResponseInput {
+  taskId: string;
+  participantId: string;
+  response: ParticipantResponse;
 }
 
 //==============================================================

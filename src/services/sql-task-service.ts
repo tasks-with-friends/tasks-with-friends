@@ -364,7 +364,7 @@ export class SqlTaskService implements TaskService {
     const updated = (
       await this.pool.query<DbParticipant>(
         `UPDATE ${this.schema}.participants
-      SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 1}`).join(', ')}
+      SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 3}`).join(', ')}
       WHERE task_external_id = $1 AND external_id = $2
       RETURNING id, external_id, task_external_id, user_external_id, response`,
         [params.taskId, params.participantId, ...values],
@@ -400,11 +400,8 @@ export class SqlTaskService implements TaskService {
   async clearParticipantResponse(params: {
     taskId: string;
     participantId: string;
-  }): Promise<void> {
+  }): Promise<Participant> {
     if (!this.currentUserId) throw new Error('Unauthorized');
-    if (params.participantId !== this.currentUserId) {
-      throw new Error('Forbidden');
-    }
 
     const updated = (
       await this.pool.query(
@@ -417,6 +414,8 @@ export class SqlTaskService implements TaskService {
     ).rows.map(using(dbParticipantToParticipant))[0];
 
     if (!updated) throw new Error('Not Found');
+
+    return updated;
   }
 
   private async getSortValue<T>(
@@ -456,13 +455,13 @@ const dbTaskToTask: Mapping<DbTask, Task> = {
   groupSize: 'group_size',
   status: (src) => {
     switch (src.status) {
+      case 'waiting':
       case 'ready':
       case 'in-progress':
       case 'done':
-      case 'canceled':
         return src.status;
       default:
-        return 'canceled';
+        return 'waiting';
     }
   },
 };
