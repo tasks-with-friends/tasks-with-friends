@@ -334,7 +334,7 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
                   {profile.id !== task.owner.id && (
                     <div className="mt-2">
                       <p className="text-xs text-gray-400">
-                        {task.owner} needs you for {task.durationMinutes}{' '}
+                        {task.owner.name} needs you for {task.durationMinutes}{' '}
                         minutes
                       </p>
                     </div>
