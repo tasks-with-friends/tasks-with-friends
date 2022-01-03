@@ -294,10 +294,10 @@ enum TaskFilter {
 }
 
 enum TaskStatus {
+  WAITING
   READY
   IN_PROGRESS
   DONE
-  CANCELED
 }
 
 type TaskConnection {
@@ -314,6 +314,7 @@ type TaskEdge {
 ###################
 
 input SetResponseInput {
+  taskId: ID!
   participantId: ID!
   response: ParticipantResponse!
 }
@@ -323,6 +324,7 @@ type SetResponsePayload {
 }
 
 input ClearResponseInput {
+  taskId: ID!
   participantId: ID!
 }
 

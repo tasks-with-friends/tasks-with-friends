@@ -281,7 +281,8 @@
         "operationId": "clearParticipantResponse",
         "responses": {
           "default": {
-            "description": "success"
+            "description": "success",
+            "schema": { "$ref": "#/definitions/participant" }
           }
         }
       }
@@ -544,7 +545,7 @@
     },
     "taskStatus": {
       "type": "string",
-      "enum": ["ready", "in-progress", "done", "canceled"]
+      "enum": ["waiting", "ready", "in-progress", "done"]
     },
     "taskList": {
       "description": "A collection of tasks that does not support Relay-style pagination",

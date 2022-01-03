@@ -14,8 +14,8 @@ export function taskDto(task: domain.Task): schema.Task {
     owner: resolveUserById(ownerId),
     status: () => {
       switch (status) {
-        case 'canceled':
-          return schema.TaskStatus.CANCELED;
+        case 'waiting':
+          return schema.TaskStatus.WAITING;
         case 'done':
           return schema.TaskStatus.DONE;
         case 'in-progress':
