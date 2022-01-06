@@ -88,35 +88,6 @@ const CreateTaskButton: React.VFC<{ className?: string }> = ({ className }) => (
 const TaskItem: React.VFC<{ task: GetTasksQuery_tasks_nodes }> = ({ task }) => {
   const { TaskModal, open } = useTaskModal();
 
-  const [setResponse, { loading: setting }] = useMutation<
-    SetResponseMutation,
-    SetResponseMutationVariables
-  >(SET_RESPONSE);
-
-  const [clearResponse, { loading: clearing }] = useMutation<
-    ClearResponseMutation,
-    ClearResponseMutationVariables
-  >(CLEAR_RESPONSE);
-
-  const handleResponse = useCallback(
-    (
-      taskId: string,
-      participantId: string,
-      response: ParticipantResponse | null,
-    ) => {
-      // TODO: optimistic responses
-      if (response === null) {
-        clearResponse({
-          variables: { input: { taskId, participantId } },
-        });
-      } else {
-        setResponse({
-          variables: { input: { taskId, participantId, response } },
-        });
-      }
-    },
-    [setResponse, clearResponse],
-  );
   return (
     <>
       <li key={task.id}>
@@ -163,7 +134,7 @@ const TaskItem: React.VFC<{ task: GetTasksQuery_tasks_nodes }> = ({ task }) => {
           </div>
         </a>
       </li>
-      <TaskModal task={task} onResponse={handleResponse} />
+      <TaskModal task={task} />
     </>
   );
 };
@@ -229,11 +200,6 @@ interface TaskModalPropTypes {
   task: GetTasksQuery_tasks_nodes;
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
-  onResponse: (
-    taskId: string,
-    participantId: string,
-    res: ParticipantResponse | null,
-  ) => void;
 }
 
 const useTaskModal = () => {
@@ -255,10 +221,58 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
   task,
   isOpen,
   setIsOpen,
-  onResponse,
 }) => {
   const cancelButtonRef = useRef(null);
   const profile = useProfile();
+
+  const [setResponse, { loading: setting }] = useMutation<
+    SetResponseMutation,
+    SetResponseMutationVariables
+  >(SET_RESPONSE);
+
+  const [clearResponse, { loading: clearing }] = useMutation<
+    ClearResponseMutation,
+    ClearResponseMutationVariables
+  >(CLEAR_RESPONSE);
+
+  const handleResponse = useCallback(
+    (
+      taskId: string,
+      participantId: string,
+      response: ParticipantResponse | null,
+    ) => {
+      if (response === null) {
+        clearResponse({
+          variables: { input: { taskId, participantId } },
+          optimisticResponse: {
+            clearResponse: {
+              __typename: 'ClearResponsePayload',
+              participant: {
+                __typename: 'Participant',
+                id: participantId,
+                response: null,
+              },
+            },
+          },
+        });
+      } else {
+        setResponse({
+          variables: { input: { taskId, participantId, response } },
+          optimisticResponse: {
+            setResponse: {
+              __typename: 'SetResponsePayload',
+              participant: {
+                __typename: 'Participant',
+                id: participantId,
+                response,
+              },
+            },
+          },
+        });
+      }
+    },
+    [setResponse, clearResponse],
+  );
 
   const me = useMemo(
     () => task.participants.nodes.find((p) => p.user.id === profile.id),
@@ -268,22 +282,22 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
   const handleClickYes = useCallback(() => {
     if (me?.id) {
       if (me?.response === ParticipantResponse.YES) {
-        onResponse(task.id, me.id, null);
+        handleResponse(task.id, me.id, null);
       } else {
-        onResponse(task.id, me.id, ParticipantResponse.YES);
+        handleResponse(task.id, me.id, ParticipantResponse.YES);
       }
     }
-  }, [me?.id, me?.response, task.id, onResponse]);
+  }, [me?.id, me?.response, task.id, handleResponse]);
 
   const handleClickNo = useCallback(() => {
     if (me?.id) {
       if (me?.response === ParticipantResponse.NO) {
-        onResponse(task.id, me.id, null);
+        handleResponse(task.id, me.id, null);
       } else {
-        onResponse(task.id, me.id, ParticipantResponse.NO);
+        handleResponse(task.id, me.id, ParticipantResponse.NO);
       }
     }
-  }, [me?.id, me?.response, task.id, onResponse]);
+  }, [me?.id, me?.response, task.id, handleResponse]);
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>
