@@ -5,12 +5,14 @@ import { Pool } from 'pg';
 import { SqlUserService } from './services/sql-user-service';
 import { SqlInvitationService } from './services/sql-invitation-service';
 import { SqlTaskService } from './services/sql-task-service';
+import { StatusCalculator } from './services/status-calculator';
 
 export type ServiceMap = {
   'current-user-id': string | undefined;
   'invitation-service': InvitationService;
   'task-service': TaskService;
   'user-service': UserService;
+  'status-calculator': StatusCalculator;
   pool: Pool;
 };
 
@@ -36,6 +38,7 @@ registry
       new SqlTaskService(
         get('pool'),
         process.env['DB_SCHEMA'] || '',
+        get('status-calculator'),
         get('current-user-id'),
       ),
   );
@@ -47,6 +50,7 @@ registry
       new SqlUserService(
         get('pool'),
         process.env['DB_SCHEMA'] || '',
+        get('status-calculator'),
         get('current-user-id'),
       ),
   );

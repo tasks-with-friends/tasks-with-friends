@@ -11,12 +11,14 @@ import {
   TaskService,
   TaskUpdate,
 } from '../domain/v1/api.g';
+import { StatusCalculator } from './status-calculator';
 import { buildPage, Mapping, parsePage, using } from './utils';
 
 export class SqlTaskService implements TaskService {
   constructor(
     private readonly pool: Pool,
     private readonly schema: string,
+    private readonly statusCalculator: StatusCalculator,
     private readonly currentUserId?: string,
   ) {}
 
@@ -28,7 +30,7 @@ export class SqlTaskService implements TaskService {
     const row = (
       await this.pool.query<{ id: number; external_id: string }>(
         `INSERT INTO ${this.schema}.tasks (owner_external_id, name, description, duration_minutes, group_size, status)
-        VALUES ($1, $2, $3, $4, $5, 'ready')
+        VALUES ($1, $2, $3, $4, $5, 'waiting')
         RETURNING id, external_id`,
         [this.currentUserId, name, description, durationMinutes, groupSize],
       )
@@ -195,6 +197,8 @@ export class SqlTaskService implements TaskService {
       participants,
     } = params.taskUpdate;
 
+    let recalculate = false;
+
     if (typeof name !== 'undefined') {
       UNSANITIZED_fields.push('name');
       values.push(name);
@@ -210,10 +214,14 @@ export class SqlTaskService implements TaskService {
     if (typeof groupSize !== 'undefined') {
       UNSANITIZED_fields.push('group_size');
       values.push(groupSize);
+      recalculate = true;
     }
     if (typeof status !== 'undefined') {
       UNSANITIZED_fields.push('status');
       values.push(status);
+
+      // TODO: get user IDs for all participants for this task
+      // TODO: run await this.statusCalculator.recalculateTaskStatusForUsers(user IDs); after the update
     }
 
     if (
@@ -253,6 +261,10 @@ export class SqlTaskService implements TaskService {
           )})`,
         [params.taskId, ...participants?.remove],
       );
+    }
+
+    if (recalculate) {
+      await this.statusCalculator.recalculateTaskStatus([params.taskId]);
     }
 
     // TODO: implement participant set
@@ -301,6 +313,8 @@ export class SqlTaskService implements TaskService {
         [params.taskId, ...userIds],
       )
     ).rows.map(using(dbParticipantToParticipant));
+
+    // consider recalculating task status if a participant status of 'YES' is added
 
     return { items };
   }
@@ -354,9 +368,11 @@ export class SqlTaskService implements TaskService {
 
     const { response } = params.participant;
 
+    let recalculate = false;
     if (typeof response !== 'undefined') {
       UNSANITIZED_fields.push('response');
       values.push(response);
+      recalculate = true;
     }
 
     if (!UNSANITIZED_fields.length) throw new Error('Bad Request');
@@ -372,6 +388,10 @@ export class SqlTaskService implements TaskService {
     ).rows.map(using(dbParticipantToParticipant))[0];
 
     if (!updated) throw new Error('Not Found');
+
+    if (recalculate) {
+      await this.statusCalculator.recalculateTaskStatus([params.taskId]);
+    }
 
     return updated;
   }
@@ -394,6 +414,8 @@ export class SqlTaskService implements TaskService {
 
     if (!deleted) throw new Error('Not Found');
 
+    await this.statusCalculator.recalculateTaskStatus([params.taskId]);
+
     return deleted;
   }
 
@@ -414,6 +436,8 @@ export class SqlTaskService implements TaskService {
     ).rows.map(using(dbParticipantToParticipant))[0];
 
     if (!updated) throw new Error('Not Found');
+
+    await this.statusCalculator.recalculateTaskStatus([params.taskId]);
 
     return updated;
   }

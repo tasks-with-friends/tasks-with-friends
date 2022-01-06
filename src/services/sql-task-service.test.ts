@@ -1,10 +1,20 @@
 import { Pool } from 'pg';
-import { Task, TaskPage } from '../domain/v1/api.g';
+import {
+  ParticipantResponse,
+  TaskPage,
+  TaskStatus,
+  UserStatus,
+} from '../domain/v1/api.g';
+import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlTaskService } from './sql-task-service';
+import { TestUtility } from './sql-test-utility';
 import { SqlUserService } from './sql-user-service';
+import { StatusCalculator } from './status-calculator';
 
 const schema = process.env['DB_SCHEMA'] || '';
 let pool: Pool;
+let statusCalculator: StatusCalculator;
+let db: TestUtility;
 describe.skip('SqlTaskService', () => {
   beforeAll(() => {
     pool = new Pool({
@@ -14,6 +24,8 @@ describe.skip('SqlTaskService', () => {
       password: process.env['POSTGRES_PASSWORD'],
       port: 5432,
     });
+    statusCalculator = new SqlStatusCalculator(pool, schema);
+    db = new TestUtility(pool, schema);
   });
 
   beforeEach(async () => {
@@ -33,7 +45,11 @@ describe.skip('SqlTaskService', () => {
   describe('createTask', () => {
     it('works', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -41,7 +57,7 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, me.id);
+      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
 
       // ACT
       const result = await service.createTask({
@@ -60,7 +76,11 @@ describe.skip('SqlTaskService', () => {
   describe('getTasks', () => {
     it('gets tasks by task IDs', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -68,7 +88,7 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, me.id);
+      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
 
       const a = await service.createTask({
         task: {
@@ -115,7 +135,11 @@ describe.skip('SqlTaskService', () => {
 
     it('gets tasks by owner ID', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -123,7 +147,7 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, me.id);
+      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
 
       const a = await service.createTask({
         task: {
@@ -182,7 +206,11 @@ describe.skip('SqlTaskService', () => {
       // TODO: create as a different user and then add me as a pariticipant
 
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -190,7 +218,7 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, me.id);
+      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
 
       const a = await service.createTask({
         task: {
@@ -249,7 +277,11 @@ describe.skip('SqlTaskService', () => {
   describe('getTask', () => {
     it('works', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -257,7 +289,7 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, me.id);
+      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
       const task = await service.createTask({
         task: {
           name: 'task',
@@ -271,6 +303,239 @@ describe.skip('SqlTaskService', () => {
 
       // ASSERT
       expect(result).toEqual(task);
+    });
+  });
+
+  describe('updateParticipant', () => {
+    it('works', async () => {
+      // ARRANGE
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
+        user: {
+          name: 'me',
+          email: 'me@example.com',
+          provider: 'test',
+          providerUserId: '2893674528967345',
+        },
+      });
+      await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        me.id,
+      ).updateUser({
+        userId: me.id,
+        userUpdate: { status: 'idle' },
+      });
+      const them = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
+        user: {
+          name: 'them',
+          email: 'them@example.com',
+          provider: 'test',
+          providerUserId: 'kjlafsdhkljadlhjfkflhjak',
+        },
+      });
+      await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        them.id,
+      ).updateUser({
+        userId: them.id,
+        userUpdate: { status: 'idle' },
+      });
+
+      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+
+      const task = await service.createTask({
+        task: {
+          name: 'test task',
+          durationMinutes: 15,
+          groupSize: 2,
+        },
+      });
+
+      const { items } = await service.createParticipants({
+        taskId: task.id,
+        participants: [{ userId: them.id }],
+      });
+
+      // ACT
+      const result = await service.updateParticipant({
+        taskId: task.id,
+        participantId: items[0].id,
+        participant: { response: 'yes' },
+      });
+
+      // ASSERT
+      const resultingTask = await service.getTask({ taskId: task.id });
+      expect(task.status).toEqual<TaskStatus>('waiting');
+      expect(resultingTask.status).toEqual<TaskStatus>('ready');
+    });
+  });
+
+  describe('various state machine logic', () => {
+    it('works when participant responses change', async () => {
+      // Create two users, me and them
+      let [me, them] = await db.createUsers(2);
+
+      // Ensure that I am idle
+      me = await db.as(me).setStatus('idle');
+      expect(me.status).toEqual<UserStatus>('idle');
+
+      // Ensure that they are idle
+      them = await db.as(them).setStatus('idle');
+      expect(them.status).toEqual<UserStatus>('idle');
+
+      // Create a tasks with a group size of two
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+
+      // Ensure the task is in a waiting state
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // Add them as a participant to the task
+      await db.as(me).addParticipant(t1, them);
+      let [p1, p2] = await db.as(me).getParticipants(t1);
+      // Ensure I have responded yes and they have not responded
+      expect(p1.response).toEqual<ParticipantResponse>('yes'); // me
+      expect(p2.response).toBeUndefined(); // them
+
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // They respond yes
+      p2 = await db.as(them).respond(t1, 'yes');
+      // Ensure the task is now in a ready state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+
+      // They respond no
+      p2 = await db.as(them).respond(t1, 'no');
+      // Ensure the task is back in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // I respond no
+      p1 = await db.as(me).respond(t1, 'no');
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // They respond yes
+      p2 = await db.as(them).respond(t1, 'yes');
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // I respond yes
+      p1 = await db.as(me).respond(t1, 'yes');
+      // Ensure the task is now in a ready state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+    });
+
+    it('works when user statuses change', async () => {
+      // Create two users, me and them
+      let [me, them] = await db.createUsers(2);
+
+      // Ensure that I am away
+      me = await db.as(me).setStatus('away');
+      expect(me.status).toEqual<UserStatus>('away');
+
+      // Ensure that they are away
+      them = await db.as(them).setStatus('away');
+      expect(them.status).toEqual<UserStatus>('away');
+
+      // Create a tasks with a group size of two
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+
+      // Ensure the task is in a waiting state
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // Add them as a participant to the task
+      await db.as(me).addParticipant(t1, them);
+      let [p1, p2] = await db.as(me).getParticipants(t1);
+      // Ensure I have responded yes and they have not responded
+      expect(p1.response).toEqual<ParticipantResponse>('yes'); // me
+      expect(p2.response).toBeUndefined(); // them
+
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // They respond yes
+      p2 = await db.as(them).respond(t1, 'yes');
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // I move to idle
+      me = await db.as(me).setStatus('idle');
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // They move to idle
+      them = await db.as(them).setStatus('idle');
+      // Ensure the task is now in a ready state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+    });
+
+    it('works when task status changes', async () => {
+      // Create two users, me and them
+      let [me, them] = await db.createUsers(2);
+
+      // Ensure that I am away
+      me = await db.as(me).setStatus('idle');
+      expect(me.status).toEqual<UserStatus>('idle');
+
+      // Ensure that they are away
+      them = await db.as(them).setStatus('away');
+      expect(them.status).toEqual<UserStatus>('away');
+
+      // Create a tasks with a group size of two
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+
+      // Ensure the task is in a waiting state
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // Add them as a participant to the task
+      await db.as(me).addParticipant(t1, them);
+      let [p1, p2] = await db.as(me).getParticipants(t1);
+      // Ensure I have responded yes and they have not responded
+      expect(p1.response).toEqual<ParticipantResponse>('yes'); // me
+      expect(p2.response).toBeUndefined(); // them
+
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // They respond yes
+      p2 = await db.as(them).respond(t1, 'yes');
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // I move to idle
+      me = await db.as(me).setStatus('idle');
+      // Ensure the task is still in a waiting state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('waiting');
+
+      // They move to idle
+      them = await db.as(them).setStatus('idle');
+      // Ensure the task is now in a ready state
+      t1 = await db.as(me).getTask(t1.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
     });
   });
 });

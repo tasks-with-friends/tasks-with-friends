@@ -1,9 +1,12 @@
 import { Pool } from 'pg';
 import { User, UserPage } from '../domain/v1/api.g';
+import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlUserService } from './sql-user-service';
+import { StatusCalculator } from './status-calculator';
 
 const schema = 'public'; // process.env['DB_SCHEMA'] || '';
 let pool: Pool;
+let statusCalculator: StatusCalculator;
 describe.skip('SqlUserService', () => {
   beforeAll(() => {
     pool = new Pool({
@@ -13,6 +16,7 @@ describe.skip('SqlUserService', () => {
       password: process.env['POSTGRES_PASSWORD'],
       port: 5432,
     });
+    statusCalculator = new SqlStatusCalculator(pool, schema);
   });
 
   beforeEach(async () => {
@@ -32,7 +36,7 @@ describe.skip('SqlUserService', () => {
   describe('getOrCreateUser', () => {
     it('returns the same user when passed the same params', async () => {
       // ARRANGE
-      const service = new SqlUserService(pool, schema);
+      const service = new SqlUserService(pool, schema, statusCalculator);
 
       // ACT
       const me = await service.getOrCreateUser({
@@ -69,7 +73,7 @@ describe.skip('SqlUserService', () => {
   describe('getUsers', () => {
     it('gets list of users by id', async () => {
       // ARRANGE
-      const service = new SqlUserService(pool, schema);
+      const service = new SqlUserService(pool, schema, statusCalculator);
       const me = await service.getOrCreateUser({
         user: {
           name: 'me',
@@ -102,7 +106,11 @@ describe.skip('SqlUserService', () => {
   describe('updateUser', () => {
     it('updates the user', async () => {
       // ARRANGE
-      const { id } = await new SqlUserService(pool, schema).getOrCreateUser({
+      const { id } = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -110,7 +118,7 @@ describe.skip('SqlUserService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlUserService(pool, schema, id);
+      const service = new SqlUserService(pool, schema, statusCalculator, id);
       const me = await service.updateUser({
         userId: id,
         userUpdate: { status: 'away' },
@@ -130,7 +138,11 @@ describe.skip('SqlUserService', () => {
   describe('addFriendToUser', () => {
     it('works', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -138,7 +150,11 @@ describe.skip('SqlUserService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const them = await new SqlUserService(pool, schema).getOrCreateUser({
+      const them = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'them',
           email: 'them@example.com',
@@ -146,7 +162,7 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'kjlafsdhkljadlhjfkflhjak',
         },
       });
-      const service = new SqlUserService(pool, schema, me.id);
+      const service = new SqlUserService(pool, schema, statusCalculator, me.id);
 
       // ACT
       const result = await service.addFriendToUser({
@@ -163,7 +179,11 @@ describe.skip('SqlUserService', () => {
       let me: User;
 
       beforeEach(async () => {
-        me = await new SqlUserService(pool, schema).getOrCreateUser({
+        me = await new SqlUserService(
+          pool,
+          schema,
+          statusCalculator,
+        ).getOrCreateUser({
           user: {
             name: 'me',
             email: 'me@example.com',
@@ -171,7 +191,7 @@ describe.skip('SqlUserService', () => {
             providerUserId: '2893674528967345',
           },
         });
-        const svc = new SqlUserService(pool, schema);
+        const svc = new SqlUserService(pool, schema, statusCalculator);
         users = [
           await svc.getOrCreateUser({
             user: {
@@ -217,7 +237,12 @@ describe.skip('SqlUserService', () => {
 
         await Promise.all(
           users.map((user) =>
-            new SqlUserService(pool, schema, me.id).addFriendToUser({
+            new SqlUserService(
+              pool,
+              schema,
+              statusCalculator,
+              me.id,
+            ).addFriendToUser({
               userId: me.id,
               friendId: user.id,
             }),
@@ -227,7 +252,12 @@ describe.skip('SqlUserService', () => {
 
       it('works without count or cursors', async () => {
         // ARRANGE
-        const service = new SqlUserService(pool, schema, me.id);
+        const service = new SqlUserService(
+          pool,
+          schema,
+          statusCalculator,
+          me.id,
+        );
 
         // ACT
         const result = await service.getFriendsByUserId({ userId: me.id });
@@ -244,7 +274,12 @@ describe.skip('SqlUserService', () => {
 
       it('takes from start without cursor', async () => {
         // ARRANGE
-        const service = new SqlUserService(pool, schema, me.id);
+        const service = new SqlUserService(
+          pool,
+          schema,
+          statusCalculator,
+          me.id,
+        );
         const [a, b, c] = users;
 
         // ACT
@@ -265,7 +300,12 @@ describe.skip('SqlUserService', () => {
 
       it('takes after cursor with some remaining', async () => {
         // ARRANGE
-        const service = new SqlUserService(pool, schema, me.id);
+        const service = new SqlUserService(
+          pool,
+          schema,
+          statusCalculator,
+          me.id,
+        );
         const [a, b, c, d, e] = users;
 
         // ACT
@@ -287,7 +327,12 @@ describe.skip('SqlUserService', () => {
 
       it('takes after cursor without any remaining', async () => {
         // ARRANGE
-        const service = new SqlUserService(pool, schema, me.id);
+        const service = new SqlUserService(
+          pool,
+          schema,
+          statusCalculator,
+          me.id,
+        );
         const [a, b, c, d, e] = users;
 
         // ACT
@@ -312,7 +357,11 @@ describe.skip('SqlUserService', () => {
   describe('getFriendsByUserId', () => {
     it('works', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -320,7 +369,11 @@ describe.skip('SqlUserService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const them = await new SqlUserService(pool, schema).getOrCreateUser({
+      const them = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'them',
           email: 'them@example.com',
@@ -328,7 +381,11 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'kjlafsdhkljadlhjfkflhjak',
         },
       });
-      const other = await new SqlUserService(pool, schema).getOrCreateUser({
+      const other = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'other',
           email: 'other@example.com',
@@ -336,7 +393,7 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'akfjl973t4ny7t4donygtd',
         },
       });
-      const service = new SqlUserService(pool, schema, me.id);
+      const service = new SqlUserService(pool, schema, statusCalculator, me.id);
 
       await service.addFriendToUser({
         userId: me.id,
@@ -347,6 +404,7 @@ describe.skip('SqlUserService', () => {
       const mine = await new SqlUserService(
         pool,
         schema,
+        statusCalculator,
         me.id,
       ).getFriendsByUserId({
         userId: me.id,
@@ -354,6 +412,7 @@ describe.skip('SqlUserService', () => {
       const theirs = await new SqlUserService(
         pool,
         schema,
+        statusCalculator,
         them.id,
       ).getFriendsByUserId({
         userId: them.id,
@@ -361,6 +420,7 @@ describe.skip('SqlUserService', () => {
       const others = await new SqlUserService(
         pool,
         schema,
+        statusCalculator,
         other.id,
       ).getFriendsByUserId({
         userId: other.id,
@@ -376,7 +436,11 @@ describe.skip('SqlUserService', () => {
   describe('removeFriendFromUser', () => {
     it('works', async () => {
       // ARRANGE
-      const me = await new SqlUserService(pool, schema).getOrCreateUser({
+      const me = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'me',
           email: 'me@example.com',
@@ -384,7 +448,11 @@ describe.skip('SqlUserService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const them = await new SqlUserService(pool, schema).getOrCreateUser({
+      const them = await new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+      ).getOrCreateUser({
         user: {
           name: 'them',
           email: 'them@example.com',
@@ -392,7 +460,7 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'kjlafsdhkljadlhjfkflhjak',
         },
       });
-      const service = new SqlUserService(pool, schema, me.id);
+      const service = new SqlUserService(pool, schema, statusCalculator, me.id);
 
       await service.addFriendToUser({
         userId: me.id,
@@ -406,6 +474,7 @@ describe.skip('SqlUserService', () => {
       const mine = await new SqlUserService(
         pool,
         schema,
+        statusCalculator,
         me.id,
       ).getFriendsByUserId({
         userId: me.id,
@@ -413,6 +482,7 @@ describe.skip('SqlUserService', () => {
       const theirs = await new SqlUserService(
         pool,
         schema,
+        statusCalculator,
         them.id,
       ).getFriendsByUserId({
         userId: them.id,
