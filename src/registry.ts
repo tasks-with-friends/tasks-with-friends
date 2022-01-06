@@ -6,6 +6,7 @@ import { SqlUserService } from './services/sql-user-service';
 import { SqlInvitationService } from './services/sql-invitation-service';
 import { SqlTaskService } from './services/sql-task-service';
 import { StatusCalculator } from './services/status-calculator';
+import { SqlStatusCalculator } from './services/sql-status-calculator';
 
 export type ServiceMap = {
   'current-user-id': string | undefined;
@@ -53,6 +54,13 @@ registry
         get('status-calculator'),
         get('current-user-id'),
       ),
+  );
+
+registry
+  .for('status-calculator')
+  .use(
+    (get) =>
+      new SqlStatusCalculator(get('pool'), process.env['DB_SCHEMA'] || ''),
   );
 
 // registry.for('pool').use(
