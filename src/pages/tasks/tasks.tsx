@@ -88,6 +88,13 @@ const CreateTaskButton: React.VFC<{ className?: string }> = ({ className }) => (
 const TaskItem: React.VFC<{ task: GetTasksQuery_tasks_nodes }> = ({ task }) => {
   const { TaskModal, open } = useTaskModal();
 
+  const profile = useProfile();
+
+  const me = useMemo(
+    () => task.participants.nodes.find((p) => p.user.id === profile.id),
+    [profile.id, task.participants.nodes],
+  );
+
   return (
     <>
       <li key={task.id}>
@@ -98,6 +105,17 @@ const TaskItem: React.VFC<{ task: GetTasksQuery_tasks_nodes }> = ({ task }) => {
                 <div className="flex text-sm">
                   <p className="font-medium text-indigo-600 truncate">
                     {task.name}
+                    {!!me?.response && (
+                      <span
+                        className={`uppercase ml-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium  ${
+                          me.response === ParticipantResponse.YES
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {me.response}
+                      </span>
+                    )}
                   </p>
                   <p className="ml-1 flex-shrink-0 font-normal text-gray-500">
                     {task.groupSize === 1
