@@ -7,12 +7,14 @@ import {
   UserService,
   UserUpdate,
 } from '../domain/v1/api.g';
+import { StatusCalculator } from './status-calculator';
 import { buildPage, Mapping, parsePage, using } from './utils';
 
 export class SqlUserService implements UserService {
   constructor(
     private readonly pool: Pool,
     private readonly schema: string,
+    private readonly statusCalculator: StatusCalculator,
     private readonly currentUserId?: string,
   ) {}
 
@@ -76,7 +78,9 @@ export class SqlUserService implements UserService {
 
     if (!updatedUser) throw new Error('Not Found');
 
-    return updatedUser;
+    await this.statusCalculator.recalculateTaskStatusForUsers([params.userId]);
+
+    return this.getUser({ userId: params.userId });
   }
 
   private async getSortValue<T>(
