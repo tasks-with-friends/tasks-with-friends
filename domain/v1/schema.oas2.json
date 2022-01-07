@@ -106,6 +106,7 @@
             "items": { "type": "string" },
             "collectionFormat": "csv",
             "allowEmptyValue": false,
+            "uniqueItems": true,
             "required": false
           },
           {
@@ -118,6 +119,19 @@
             "in": "query",
             "name": "participantId",
             "type": "string",
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["waiting", "ready", "in-progress", "done"]
+            },
+            "collectionFormat": "csv",
+            "allowEmptyValue": false,
+            "uniqueItems": true,
             "required": false
           },
           { "$ref": "#/parameters/first" },
