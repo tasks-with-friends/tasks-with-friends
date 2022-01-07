@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import {
+  GetTasksStatus,
   NewParticipant,
   NewTask,
   Participant,
@@ -12,7 +13,7 @@ import {
   TaskUpdate,
 } from '../domain/v1/api.g';
 import { StatusCalculator } from './status-calculator';
-import { buildPage, Mapping, parsePage, using } from './utils';
+import { buildInClause, buildPage, Mapping, parsePage, using } from './utils';
 
 export class SqlTaskService implements TaskService {
   constructor(
@@ -53,6 +54,7 @@ export class SqlTaskService implements TaskService {
     taskIds?: string[] | undefined;
     ownerId?: string | undefined;
     participantId?: string | undefined;
+    status?: GetTasksStatus[];
     first?: number | undefined;
     after?: string | undefined;
     last?: number | undefined;
@@ -63,21 +65,34 @@ export class SqlTaskService implements TaskService {
     if (params?.taskIds) {
       return this.getTasksById(params?.taskIds);
     } else if (params?.ownerId) {
-      return this.getTasksByOwnerId(params?.ownerId, params);
+      return this.getTasksByOwnerId(params?.ownerId, params.status, params);
     } else if (params?.participantId) {
-      return this.getTasksByParticipantId(params?.participantId, params);
+      return this.getTasksByParticipantId(
+        params?.participantId,
+        params.status,
+        params,
+      );
     }
 
     throw new Error('Bad Request');
   }
 
-  private async getTasksById(taskIds: string[]): Promise<TaskPage> {
+  private async getTasksById(
+    taskIds: string[],
+    status?: GetTasksStatus[],
+  ): Promise<TaskPage> {
+    const { in: idClause, values: idValues } = buildInClause(taskIds || []);
+    const { in: statusClause, values: statusValues } = buildInClause(
+      status || [],
+      idValues.length,
+    );
     const items = (
       await this.pool.query<DbTask>(
         `SELECT id, external_id, owner_external_id, name, description, duration_minutes, group_size, status
           FROM ${this.schema}.tasks
-          WHERE external_id IN (${taskIds.map((_, i) => `$${i + 1}`)})`,
-        [...taskIds],
+          WHERE external_id IN (${idClause})
+          ${statusValues?.length ? `AND status IN (${statusClause})` : ''}`,
+        [...idValues, ...statusValues],
       )
     ).rows.map(using(dbTaskToTask));
 
@@ -92,6 +107,7 @@ export class SqlTaskService implements TaskService {
 
   private async getTasksByOwnerId(
     ownerId: string,
+    status: GetTasksStatus[] = [],
     params: {
       first?: number | undefined;
       after?: string | undefined;
@@ -110,16 +126,24 @@ export class SqlTaskService implements TaskService {
       uniqueId,
     );
 
+    const { in: statusClause, values: statusValues } = buildInClause(
+      status || [],
+      sortValue ? 5 : 3,
+    );
+
     const items = (
       await this.pool.query<DbTask>(
         `SELECT id, external_id, owner_external_id, name, description, duration_minutes, group_size, status
           FROM ${this.schema}.tasks
           WHERE owner_external_id = $1
+          ${status.length ? `AND status IN (${statusClause})` : ''}
           
           ${sortValue ? `AND (id, external_id) ${operator} ($3, $4)` : ''}
           ORDER BY id ${orderBy}, external_id ${orderBy}
           limit $2`,
-        sortValue ? [ownerId, limit, sortValue, uniqueId] : [ownerId, limit],
+        sortValue
+          ? [ownerId, limit, sortValue, uniqueId, ...statusValues]
+          : [ownerId, limit, ...statusValues],
       )
     ).rows.map(using(dbTaskToTask));
 
@@ -128,6 +152,7 @@ export class SqlTaskService implements TaskService {
 
   private async getTasksByParticipantId(
     participantId: string,
+    status: GetTasksStatus[] = [],
     params: {
       first?: number | undefined;
       after?: string | undefined;
@@ -146,6 +171,11 @@ export class SqlTaskService implements TaskService {
       uniqueId,
     );
 
+    const { in: statusClause, values: statusValues } = buildInClause(
+      status || [],
+      sortValue ? 5 : 3,
+    );
+
     const items = (
       await this.pool.query<DbTask>(
         `SELECT t.id, t.external_id, t.owner_external_id, t.name, t.description, t.duration_minutes, t.group_size, t.status
@@ -154,13 +184,14 @@ export class SqlTaskService implements TaskService {
             this.schema
           }.participants p on t.external_id = p.task_external_id
           WHERE p.user_external_id = $1
+          ${status.length ? `AND status IN (${statusClause})` : ''}
           
           ${sortValue ? `AND (t.id, t.external_id) ${operator} ($3, $4)` : ''}
           ORDER BY t.id ${orderBy}, t.external_id ${orderBy}
           limit $2`,
         sortValue
-          ? [participantId, limit, sortValue, uniqueId]
-          : [participantId, limit],
+          ? [participantId, limit, sortValue, uniqueId, ...statusValues]
+          : [participantId, limit, ...statusValues],
       )
     ).rows.map(using(dbTaskToTask));
 
