@@ -64,6 +64,12 @@ export const root: Root = {
         participantId: profile.id,
         ...paginate(page),
       });
+    } else if (filter === schema.TaskFilter.READY) {
+      tasks = await service.getTasks({
+        participantId: profile.id,
+        status: ['ready'],
+        ...paginate(page),
+      });
     } else {
       throw new Error(`Filter not supported: ${filter}`);
     }

@@ -123,3 +123,13 @@ export function buildPage<T>(
     };
   }
 }
+
+export function buildInClause<T>(
+  items: T[],
+  startingAt: number = 1,
+): { in: string; values: T[] } {
+  return {
+    in: items.map((_, i) => `$${i + startingAt}`).join(', '),
+    values: items,
+  };
+}
