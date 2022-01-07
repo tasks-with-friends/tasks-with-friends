@@ -8,7 +8,7 @@ export function userDto(object: domain.User): schema.User {
   return {
     ...object,
     avatarUrl: typeof object.avatarUrl === 'string' ? object.avatarUrl : null,
-    status: schema.UserStatus.IDLE,
+    status: statusDto(object.status),
   };
 }
 
@@ -36,4 +36,17 @@ export function userConnection(page: Page<domain.User>): schema.UserConnection {
     nodes: () => page.items.map(userDto),
     pageInfo: () => pageInfo(page),
   };
+}
+
+export function statusDto(object: domain.UserStatus): schema.UserStatus {
+  switch (object) {
+    case 'away':
+      return schema.UserStatus.AWAY;
+    case 'idle':
+      return schema.UserStatus.IDLE;
+    case 'flow':
+      return schema.UserStatus.FLOW;
+    default:
+      throw new Error(`User type ${object} is not supported`);
+  }
 }

@@ -3,7 +3,7 @@ import * as schema from '../domain/v1/graph.g';
 import { taskConnection, taskDto } from './task-dto';
 import { userConnection, userDto } from './user-dto';
 import { paginate } from './utils';
-import { TaskPage, TaskUpdate } from '../domain/v1/api.g';
+import { TaskPage, TaskUpdate, UserStatus } from '../domain/v1/api.g';
 import { participantDto } from './participant-dto';
 
 export type Root = schema.Query & schema.Mutation;
@@ -189,7 +189,30 @@ export const root: Root = {
 
     return { participant: participantDto(participant) };
   },
-  setUserStatus: () => {
-    throw new Error('method not implemented');
+  setUserStatus: async ({ input }, { profile, registry }) => {
+    let status: UserStatus;
+
+    switch (input.status) {
+      case schema.UserStatus.AWAY:
+        status = 'away';
+        break;
+      case schema.UserStatus.IDLE:
+        status = 'idle';
+        break;
+      case schema.UserStatus.FLOW:
+        status = 'flow';
+        break;
+      default:
+        throw new Error(`User status not supported: ${input.status}`);
+    }
+
+    const me = await registry.get('user-service').updateUser({
+      userId: profile.id,
+      userUpdate: {
+        status,
+      },
+    });
+
+    return { me: userDto(me) };
   },
 };
