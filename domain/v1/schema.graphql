@@ -291,6 +291,10 @@ enum TaskFilter {
   All tasks that the current user has access to
   """
   ALL
+  """
+  All tasks that the current user has access to that have enough participants to start
+  """
+  READY
 }
 
 enum TaskStatus {
