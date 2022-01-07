@@ -76,6 +76,10 @@ export interface SetResponseInput {
   response: ParticipantResponse;
 }
 
+export interface SetUserStatusInput {
+  status: UserStatus;
+}
+
 //==============================================================
 // END Enums and Input Objects
 //==============================================================

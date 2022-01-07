@@ -20,6 +20,33 @@ import {
 
 const GET_DASHBOARD = gql`
   query GetDashboardQuery {
+    tasks(filter: READY) {
+      nodes {
+        id
+        name
+        description
+        status
+        durationMinutes
+        groupSize
+        status
+        owner {
+          id
+          name
+          avatarUrl
+        }
+        participants(first: 100) {
+          nodes {
+            id
+            response
+            user {
+              id
+              name
+              avatarUrl
+            }
+          }
+        }
+      }
+    }
     incomingInvitations {
       nodes {
         id
