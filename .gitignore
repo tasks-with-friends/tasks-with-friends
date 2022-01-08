@@ -121,6 +121,7 @@ data
 build/
 src/build-info.ts
 *.g.*
+__generated__
 
 # Netlify output
 .netlify/
