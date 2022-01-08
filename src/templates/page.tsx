@@ -6,6 +6,7 @@ import { useProfile } from '../profile-provider';
 import { Link } from 'react-router-dom';
 import { UserStatus } from '../../__generated__/globalTypes';
 import { useStatus } from '../components/use-status';
+import { Flow } from '../pages/flow';
 
 const navigation = [
   { name: 'Dashboard', to: '/', current: true },
@@ -26,6 +27,8 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
   const profile = useProfile();
 
   const { status, setStatus, loading, saving } = useStatus();
+
+  if (status === UserStatus.FLOW) return <Flow />;
 
   return (
     <>
@@ -98,11 +101,7 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                       <button
                         type="button"
                         onClick={() => setStatus(UserStatus.FLOW)}
-                        className={`-ml-px relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium focus:z-20 focus:outline-none focus:ring-1 ${
-                          status === UserStatus.FLOW
-                            ? 'text-green-600 hover:bg-green-50 bg-green-200 focus:ring-green-500 border-green-500 z-10'
-                            : 'text-gray-300 hover:text-gray-500 hover:bg-green-50 border-gray-300 bg-transparent focus:ring-indigo-500 focus:border-indigo-500'
-                        }`}
+                        className={`-ml-px relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium focus:z-20 focus:outline-none focus:ring-1 ${'text-gray-300 hover:text-gray-500 hover:bg-green-50 border-gray-300 bg-transparent focus:ring-indigo-500 focus:border-indigo-500'}`}
                       >
                         Flow
                       </button>
