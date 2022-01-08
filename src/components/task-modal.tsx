@@ -20,6 +20,10 @@ const SET_RESPONSE = gql`
       participant {
         id
         response
+        task {
+          id
+          status
+        }
       }
     }
   }
@@ -31,6 +35,10 @@ const CLEAR_RESPONSE = gql`
       participant {
         id
         response
+        task {
+          id
+          status
+        }
       }
     }
   }
@@ -91,6 +99,11 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
                 __typename: 'Participant',
                 id: participantId,
                 response: null,
+                task: {
+                  __typename: 'Task',
+                  id: taskId,
+                  status: task.status,
+                },
               },
             },
           },
@@ -105,13 +118,18 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
                 __typename: 'Participant',
                 id: participantId,
                 response,
+                task: {
+                  __typename: 'Task',
+                  id: taskId,
+                  status: task.status,
+                },
               },
             },
           },
         });
       }
     },
-    [setResponse, clearResponse],
+    [setResponse, clearResponse, task.status],
   );
 
   const me = useMemo(
