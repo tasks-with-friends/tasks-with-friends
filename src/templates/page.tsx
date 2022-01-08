@@ -5,12 +5,7 @@ import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { useProfile } from '../profile-provider';
 import { Link } from 'react-router-dom';
 import { UserStatus } from '../../__generated__/globalTypes';
-import { gql, useMutation, useQuery } from '@apollo/client';
-import {
-  SetUserStatusMutation,
-  SetUserStatusMutationVariables,
-} from './__generated__/SetUserStatusMutation';
-import { GetTemplateQuery } from './__generated__/GetTemplateQuery';
+import { useStatus } from '../components/use-status';
 
 const navigation = [
   { name: 'Dashboard', to: '/', current: true },
@@ -27,56 +22,10 @@ function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
 }
 
-const GET_TEMPLATE = gql`
-  query GetTemplateQuery {
-    me {
-      id
-      status
-    }
-  }
-`;
-
-const SET_USER_STATUS = gql`
-  mutation SetUserStatusMutation($input: SetUserStatusInput!) {
-    setUserStatus(input: $input) {
-      me {
-        id
-        status
-      }
-    }
-  }
-`;
-
 export const Page: React.FC<{ title: string }> = ({ title, children }) => {
   const profile = useProfile();
 
-  const { data } = useQuery<GetTemplateQuery>(GET_TEMPLATE);
-
-  const [setUserStatus, { loading: setting }] = useMutation<
-    SetUserStatusMutation,
-    SetUserStatusMutationVariables
-  >(SET_USER_STATUS);
-
-  const handleClickStatus = useCallback(
-    (newStatus: UserStatus) => {
-      if (data?.me?.status !== newStatus) {
-        setUserStatus({
-          variables: { input: { status: newStatus } },
-          optimisticResponse: {
-            setUserStatus: {
-              __typename: 'SetUserStatusPayload',
-              me: {
-                __typename: 'User',
-                id: profile.id,
-                status: newStatus,
-              },
-            },
-          },
-        });
-      }
-    },
-    [data?.me?.status, profile.id, setUserStatus],
-  );
+  const { status, setStatus, loading, saving } = useStatus();
 
   return (
     <>
@@ -125,10 +74,10 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                     <div className="relative z-0 inline-flex shadow-sm rounded-md ml-8">
                       <button
                         type="button"
-                        onClick={() => handleClickStatus(UserStatus.AWAY)}
+                        onClick={() => setStatus(UserStatus.AWAY)}
                         // className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                         className={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium focus:z-20 focus:outline-none focus:ring-1 ${
-                          data?.me?.status === UserStatus.AWAY
+                          status === UserStatus.AWAY
                             ? 'text-gray-700 hover:bg-gray-50 bg-gray-200 focus:ring-gray-500 border-gray-500 z-10'
                             : 'text-gray-300 hover:text-gray-500 hover:bg-gray-50 border-gray-300 bg-transparent focus:ring-indigo-500 focus:border-indigo-500'
                         }`}
@@ -137,9 +86,9 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleClickStatus(UserStatus.IDLE)}
+                        onClick={() => setStatus(UserStatus.IDLE)}
                         className={`-ml-px relative inline-flex items-center px-4 py-2 border text-sm font-medium focus:z-20 focus:outline-none focus:ring-1 ${
-                          data?.me?.status === UserStatus.IDLE
+                          status === UserStatus.IDLE
                             ? 'text-indigo-600 hover:bg-indigo-50 bg-indigo-200 focus:ring-indigo-500 border-indigo-500 z-10'
                             : 'text-gray-300 hover:text-gray-500 hover:bg-indigo-50 border-gray-300 bg-transparent focus:ring-indigo-500 focus:border-indigo-500'
                         }`}
@@ -148,9 +97,9 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => handleClickStatus(UserStatus.FLOW)}
+                        onClick={() => setStatus(UserStatus.FLOW)}
                         className={`-ml-px relative inline-flex items-center px-4 py-2 rounded-r-md border text-sm font-medium focus:z-20 focus:outline-none focus:ring-1 ${
-                          data?.me?.status === UserStatus.FLOW
+                          status === UserStatus.FLOW
                             ? 'text-green-600 hover:bg-green-50 bg-green-200 focus:ring-green-500 border-green-500 z-10'
                             : 'text-gray-300 hover:text-gray-500 hover:bg-green-50 border-gray-300 bg-transparent focus:ring-indigo-500 focus:border-indigo-500'
                         }`}
