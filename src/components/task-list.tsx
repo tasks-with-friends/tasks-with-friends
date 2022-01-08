@@ -1,12 +1,40 @@
+import { gql } from '@apollo/client';
 import { ChevronRightIcon } from '@heroicons/react/solid';
 import React, { useMemo } from 'react';
 import { ParticipantResponse } from '../../__generated__/globalTypes';
-import { GetTasksQuery_tasks_nodes } from '../pages/tasks/__generated__/GetTasksQuery';
 import { useProfile } from '../profile-provider';
 import { useTaskModal } from './task-modal';
+import { TaskListItem } from './__generated__/TaskListItem';
+
+export const TASK_LIST_ITEM = gql`
+  fragment TaskListItem on Task {
+    id
+    name
+    description
+    status
+    durationMinutes
+    groupSize
+    owner {
+      id
+      name
+      avatarUrl
+    }
+    participants(first: 100) {
+      nodes {
+        id
+        response
+        user {
+          id
+          name
+          avatarUrl
+        }
+      }
+    }
+  }
+`;
 
 export interface TaskListPropTypes {
-  tasks: GetTasksQuery_tasks_nodes[];
+  tasks: TaskListItem[];
 }
 
 export const TaskList: React.VFC<TaskListPropTypes> = ({ tasks }) => (
@@ -19,7 +47,7 @@ export const TaskList: React.VFC<TaskListPropTypes> = ({ tasks }) => (
   </div>
 );
 
-const TaskItem: React.VFC<{ task: GetTasksQuery_tasks_nodes }> = ({ task }) => {
+const TaskItem: React.VFC<{ task: TaskListItem }> = ({ task }) => {
   const { TaskModal, open } = useTaskModal();
 
   const profile = useProfile();

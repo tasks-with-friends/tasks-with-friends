@@ -5,34 +5,14 @@ import { Link } from 'react-router-dom';
 
 import { Page } from '../../templates/page';
 import { GetTasksQuery } from './__generated__/GetTasksQuery';
-import { TaskList } from '../../components/task-list';
+import { TaskList, TASK_LIST_ITEM } from '../../components/task-list';
 
 export const GET_TASKS = gql`
+  ${TASK_LIST_ITEM}
   query GetTasksQuery {
     tasks(filter: ALL) {
       nodes {
-        id
-        name
-        description
-        status
-        durationMinutes
-        groupSize
-        owner {
-          id
-          name
-          avatarUrl
-        }
-        participants(first: 100) {
-          nodes {
-            id
-            response
-            user {
-              id
-              name
-              avatarUrl
-            }
-          }
-        }
+        ...TaskListItem
       }
     }
   }

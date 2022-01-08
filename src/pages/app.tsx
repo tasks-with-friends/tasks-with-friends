@@ -1,6 +1,7 @@
 /* This example requires Tailwind CSS v2.0+ */
 import { gql, useMutation, useQuery } from '@apollo/client';
 import React, { useCallback, useState } from 'react';
+import { TaskList, TASK_LIST_ITEM } from '../components/task-list';
 
 import { Page } from '../templates/page';
 import { ConfirmationModal } from './confirmation-modal';
@@ -19,32 +20,11 @@ import {
 } from './__generated__/RejectInvitationMutation';
 
 const GET_DASHBOARD = gql`
+  ${TASK_LIST_ITEM}
   query GetDashboardQuery {
     tasks(filter: READY) {
       nodes {
-        id
-        name
-        description
-        status
-        durationMinutes
-        groupSize
-        status
-        owner {
-          id
-          name
-          avatarUrl
-        }
-        participants(first: 100) {
-          nodes {
-            id
-            response
-            user {
-              id
-              name
-              avatarUrl
-            }
-          }
-        }
+        ...TaskListItem
       }
     }
     incomingInvitations {
@@ -212,11 +192,23 @@ const DashboardGuts: React.VFC = () => {
   if (loading) return <>Loading ...</>;
   if (error) return <>Error loading.</>;
 
-  if (data?.incomingInvitations?.nodes?.length) {
-    return <InvitationsList invitations={data?.incomingInvitations?.nodes} />;
-  }
+  <div>
+    hello
+    {!!data?.incomingInvitations?.nodes?.length && (
+      <InvitationsList invitations={data?.incomingInvitations?.nodes} />
+    )}
+    {!!data?.tasks?.nodes?.length && <TaskList tasks={data.tasks.nodes} />}
+  </div>;
 
-  return <>Hello</>;
+  return (
+    <div>
+      hello
+      {!!data?.incomingInvitations?.nodes?.length && (
+        <InvitationsList invitations={data?.incomingInvitations?.nodes} />
+      )}
+      {!!data?.tasks?.nodes?.length && <TaskList tasks={data.tasks.nodes} />}
+    </div>
+  );
 };
 
 export const App: React.VFC = () => {

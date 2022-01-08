@@ -3,7 +3,6 @@ import { Dialog, Transition } from '@headlessui/react';
 import React, { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ParticipantResponse } from '../../__generated__/globalTypes';
-import { GetTasksQuery_tasks_nodes } from '../pages/tasks/__generated__/GetTasksQuery';
 import { useProfile } from '../profile-provider';
 import {
   ClearResponseMutation,
@@ -13,6 +12,7 @@ import {
   SetResponseMutation,
   SetResponseMutationVariables,
 } from './__generated__/SetResponseMutation';
+import { TaskListItem } from './__generated__/TaskListItem';
 
 const SET_RESPONSE = gql`
   mutation SetResponseMutation($input: SetResponseInput!) {
@@ -37,7 +37,7 @@ const CLEAR_RESPONSE = gql`
 `;
 
 export interface TaskModalPropTypes {
-  task: GetTasksQuery_tasks_nodes;
+  task: TaskListItem;
   isOpen: boolean;
   setIsOpen: (value: boolean) => void;
 }
