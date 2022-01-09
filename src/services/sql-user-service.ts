@@ -65,14 +65,30 @@ export class SqlUserService implements UserService {
     const { userId } = params;
     if (userId !== this.currentUserId) throw new Error('Forbidden');
 
-    const { status } = params.userUpdate;
+    const UNSANITIZED_fields: string[] = [];
+    const values: any[] = [];
+    const { status, currentTaskId } = params.userUpdate;
+
+    UNSANITIZED_fields.push('status');
+    values.push(status);
+
+    if (status === 'flow') {
+      if (currentTaskId) {
+        UNSANITIZED_fields.push('current_task_external_id');
+        values.push(currentTaskId);
+      }
+    } else {
+      UNSANITIZED_fields.push('current_task_external_id');
+      values.push(null);
+    }
+
     const updatedUser = (
       await this.pool.query<DbUser>(
         `UPDATE ${this.schema}.users
-        SET status = $1
-        WHERE external_id = $2
+        SET ${UNSANITIZED_fields.map((f, i) => `${f} = $${i + 2}`).join(', ')}
+        WHERE external_id = $1
         RETURNING *`,
-        [status, userId],
+        [userId, ...values],
       )
     ).rows.map(using(dbUserToUser))[0];
 
@@ -183,6 +199,7 @@ type DbUser = {
   provider: string;
   provider_user_id: string;
   status: string;
+  current_task_external_id?: string;
 };
 
 const dbUserToUser: Mapping<DbUser, User> = {
@@ -192,6 +209,7 @@ const dbUserToUser: Mapping<DbUser, User> = {
   avatarUrl: 'avatar_url',
   provider: 'provider',
   providerUserId: 'provider_user_id',
+  currentTaskId: 'current_task_external_id',
   status: (src) => {
     switch (src.status) {
       case 'idle':

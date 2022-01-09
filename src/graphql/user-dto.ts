@@ -3,12 +3,17 @@ import * as schema from '../domain/v1/graph.g';
 import { CursorProvider } from '../domain/cursor-provider';
 import { Page } from '../domain/utils';
 import { pageInfo } from './utils';
+import { resolveTaskById } from './task-dto';
 
 export function userDto(object: domain.User): schema.User {
   return {
     ...object,
     avatarUrl: typeof object.avatarUrl === 'string' ? object.avatarUrl : null,
     status: statusDto(object.status),
+    currentTask: async (args, context, info) => {
+      if (!object.currentTaskId) return null;
+      return resolveTaskById(object.currentTaskId)(args, context, info);
+    },
   };
 }
 
