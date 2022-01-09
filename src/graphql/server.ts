@@ -210,6 +210,7 @@ export const root: Root = {
       userId: profile.id,
       userUpdate: {
         status,
+        currentTaskId: input.currentTaskId || undefined,
       },
     });
 
