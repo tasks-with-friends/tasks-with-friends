@@ -19,10 +19,6 @@ export const resolveUserById =
       .get('user-service')
       .getUsers({ userIds: [userId] });
 
-    const user = users.items[0];
-
-    console.log({ userId, users, user });
-
     return userDto(users.items[0]);
   };
 
