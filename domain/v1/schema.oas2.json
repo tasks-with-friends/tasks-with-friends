@@ -602,7 +602,8 @@
         "avatarUrl": { "type": "string" },
         "provider": { "type": "string" },
         "providerUserId": { "type": "string" },
-        "status": { "$ref": "#/definitions/userStatus" }
+        "status": { "$ref": "#/definitions/userStatus" },
+        "currentTaskId": { "$ref": "#/definitions/id" }
       }
     },
     "newUser": {
@@ -620,6 +621,7 @@
       "type": "object",
       "required": ["status"],
       "properties": {
+        "currentTaskId": { "$ref": "#/definitions/id" },
         "status": { "$ref": "#/definitions/userStatus" }
       }
     },

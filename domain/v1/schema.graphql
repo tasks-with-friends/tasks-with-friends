@@ -140,6 +140,7 @@ type InvitationEdge {
 
 input SetUserStatusInput {
   status: UserStatus!
+  currentTaskId: ID
 }
 
 type SetUserStatusPayload {
@@ -167,6 +168,10 @@ type User {
   User status
   """
   status: UserStatus!
+  """
+  The current task
+  """
+  currentTask: Task
 }
 
 enum UserStatus {
