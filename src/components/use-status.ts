@@ -1,12 +1,14 @@
 import { ApolloError, gql, useMutation, useQuery } from '@apollo/client';
 import { useCallback } from 'react';
 
-import { UserStatus } from '../../__generated__/globalTypes';
+import { TaskStatus, UserStatus } from '../../__generated__/globalTypes';
+import { GET_DASHBOARD } from '../pages/app';
 import { useProfile } from '../profile-provider';
 import { GetUserStatusQuery } from './__generated__/GetUserStatusQuery';
 import {
   SetUserStatusMutation,
   SetUserStatusMutationVariables,
+  SetUserStatusMutation_setUserStatus_me_currentTask,
 } from './__generated__/SetUserStatusMutation';
 
 export const GET_TEMPLATE = gql`
@@ -14,6 +16,10 @@ export const GET_TEMPLATE = gql`
     me {
       id
       status
+      currentTask {
+        id
+        status
+      }
     }
   }
 `;
@@ -24,6 +30,10 @@ export const SET_USER_STATUS = gql`
       me {
         id
         status
+        currentTask {
+          id
+          status
+        }
       }
     }
   }
@@ -31,7 +41,8 @@ export const SET_USER_STATUS = gql`
 
 export function useStatus(): {
   status?: UserStatus;
-  setStatus: (newStatus: UserStatus) => void;
+  currentTaskId?: string;
+  setStatus: (newStatus: UserStatus, currentTaskId?: string) => void;
   loading: boolean;
   saving: boolean;
   error?: ApolloError;
@@ -50,7 +61,18 @@ export function useStatus(): {
   >(SET_USER_STATUS);
 
   const setStatus = useCallback(
-    (newStatus: UserStatus) => {
+    (newStatus: UserStatus, currentTaskId?: string) => {
+      const optimisticCurrentTask: SetUserStatusMutation_setUserStatus_me_currentTask | null =
+        currentTaskId
+          ? {
+              __typename: 'Task',
+              id: currentTaskId,
+              status: TaskStatus.IN_PROGRESS,
+            }
+          : null;
+
+      console.log({ optimisticCurrentTask });
+
       if (data?.me?.status !== newStatus) {
         setUserStatus({
           variables: { input: { status: newStatus } },
@@ -61,9 +83,11 @@ export function useStatus(): {
                 __typename: 'User',
                 id: profile.id,
                 status: newStatus,
+                currentTask: optimisticCurrentTask,
               },
             },
           },
+          refetchQueries: [{ query: GET_DASHBOARD }],
         });
       }
     },
@@ -72,6 +96,7 @@ export function useStatus(): {
 
   return {
     status: data?.me?.status,
+    currentTaskId: data?.me?.currentTask?.id,
     setStatus,
     loading,
     saving,

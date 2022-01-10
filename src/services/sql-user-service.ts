@@ -195,21 +195,21 @@ type DbUser = {
   external_id: string;
   name: string;
   email: string;
-  avatar_url: string;
+  avatar_url: string | null;
   provider: string;
   provider_user_id: string;
   status: string;
-  current_task_external_id?: string;
+  current_task_external_id: string | null;
 };
 
 const dbUserToUser: Mapping<DbUser, User> = {
   id: 'external_id',
   name: 'name',
   email: 'email',
-  avatarUrl: 'avatar_url',
+  avatarUrl: (src) => src.avatar_url || undefined,
   provider: 'provider',
   providerUserId: 'provider_user_id',
-  currentTaskId: 'current_task_external_id',
+  currentTaskId: (src) => src.current_task_external_id || undefined,
   status: (src) => {
     switch (src.status) {
       case 'idle':

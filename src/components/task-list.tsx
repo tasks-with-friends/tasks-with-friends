@@ -26,6 +26,7 @@ export const TASK_LIST_ITEM = gql`
         user {
           id
           name
+          email
           avatarUrl
         }
       }

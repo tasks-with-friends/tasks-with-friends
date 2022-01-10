@@ -157,6 +157,22 @@ export class UserScopedTestUtility {
       },
     });
   }
+
+  async startTask(task: Pick<Task, 'id'>): Promise<Task> {
+    return this.taskService.startTask({ taskId: task.id });
+  }
+
+  async joinTask(task: Pick<Task, 'id'>): Promise<Task> {
+    return this.taskService.joinTask({ taskId: task.id });
+  }
+
+  async endTask(task: Pick<Task, 'id'>): Promise<Task> {
+    return this.taskService.endTask({ taskId: task.id });
+  }
+
+  async leaveTask(task: Pick<Task, 'id'>): Promise<Task> {
+    return this.taskService.leaveTask({ taskId: task.id });
+  }
 }
 
 const names: [string, string][] = [

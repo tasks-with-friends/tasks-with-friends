@@ -3,11 +3,11 @@ import {
   gql,
   InternalRefetchQueryDescriptor,
   useMutation,
-  useQuery,
 } from '@apollo/client';
 import React, { useCallback, useLayoutEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { EditTaskInput } from '../../../__generated__/globalTypes';
+import { GET_TASK, useTask } from '../../components/use-task';
 
 import { Page } from '../../templates/page';
 import { Task, TaskForm, TaskFormSubmitHandler } from './task-form';
@@ -17,37 +17,9 @@ import {
   EditTaskMutationVariables,
 } from './__generated__/EditTaskMutation';
 import {
-  GetTaskQuery,
-  GetTaskQueryVariables,
-} from './__generated__/GetTaskQuery';
-import {
   RemoveTaskMutation,
   RemoveTaskMutationVariables,
 } from './__generated__/RemoveTaskMutation';
-
-const GET_TASK = gql`
-  query GetTaskQuery($id: ID!) {
-    task(id: $id) {
-      id
-      name
-      description
-      durationMinutes
-      groupSize
-      status
-      participants {
-        nodes {
-          id
-          user {
-            id
-            name
-            email
-            avatarUrl
-          }
-        }
-      }
-    }
-  }
-`;
 
 const EDIT_TASK = gql`
   mutation EditTaskMutation($input: EditTaskInput!) {
@@ -81,13 +53,7 @@ const EditTaskGuts: React.VFC = () => {
     document.getElementById('name')?.focus();
   }, []);
 
-  const {
-    data,
-    loading,
-    error: loadError,
-  } = useQuery<GetTaskQuery, GetTaskQueryVariables>(GET_TASK, {
-    variables: { id: taskId || '' },
-  });
+  const { data, loading, error: loadError } = useTask(taskId);
 
   const [editTask, { loading: saving, error: saveError }] = useMutation<
     EditTaskMutation,
