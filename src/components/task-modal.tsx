@@ -2,16 +2,28 @@ import { gql, useMutation } from '@apollo/client';
 import { Dialog, Transition } from '@headlessui/react';
 import React, { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ParticipantResponse } from '../../__generated__/globalTypes';
+import {
+  ParticipantResponse,
+  TaskStatus,
+  UserStatus,
+} from '../../__generated__/globalTypes';
 import { useProfile } from '../profile-provider';
 import {
   ClearResponseMutation,
   ClearResponseMutationVariables,
 } from './__generated__/ClearResponseMutation';
 import {
+  JoinTaskMutation,
+  JoinTaskMutationVariables,
+} from './__generated__/JoinTaskMutation';
+import {
   SetResponseMutation,
   SetResponseMutationVariables,
 } from './__generated__/SetResponseMutation';
+import {
+  StartTaskMutation,
+  StartTaskMutationVariables,
+} from './__generated__/StartTaskMutation';
 import { TaskListItem } from './__generated__/TaskListItem';
 
 const SET_RESPONSE = gql`
@@ -39,6 +51,44 @@ const CLEAR_RESPONSE = gql`
           id
           status
         }
+      }
+    }
+  }
+`;
+
+const START_TASK = gql`
+  mutation StartTaskMutation($input: StartTaskInput!) {
+    startTask(input: $input) {
+      me {
+        id
+        status
+        currentTask {
+          id
+          status
+        }
+      }
+      task {
+        id
+        status
+      }
+    }
+  }
+`;
+
+const JOIN_TASK = gql`
+  mutation JoinTaskMutation($input: JoinTaskInput!) {
+    joinTask(input: $input) {
+      me {
+        id
+        status
+        currentTask {
+          id
+          status
+        }
+      }
+      task {
+        id
+        status
       }
     }
   }
@@ -72,6 +122,75 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
 }) => {
   const cancelButtonRef = useRef(null);
   const profile = useProfile();
+
+  const [startTask] = useMutation<
+    StartTaskMutation,
+    StartTaskMutationVariables
+  >(START_TASK);
+
+  const handleStartTask = useCallback(() => {
+    startTask({
+      variables: {
+        input: {
+          taskId: task.id,
+        },
+      },
+      optimisticResponse: {
+        startTask: {
+          __typename: 'StartTaskPayload',
+          me: {
+            __typename: 'User',
+            id: profile.id,
+            status: UserStatus.FLOW,
+            currentTask: {
+              __typename: 'Task',
+              id: task.id,
+              status: TaskStatus.IN_PROGRESS,
+            },
+          },
+          task: {
+            __typename: 'Task',
+            id: task.id,
+            status: TaskStatus.IN_PROGRESS,
+          },
+        },
+      },
+    });
+  }, [task.id, startTask, profile.id]);
+
+  const [joinTask] = useMutation<JoinTaskMutation, JoinTaskMutationVariables>(
+    JOIN_TASK,
+  );
+
+  const handleJoinTask = useCallback(() => {
+    joinTask({
+      variables: {
+        input: {
+          taskId: task.id,
+        },
+      },
+      optimisticResponse: {
+        joinTask: {
+          __typename: 'JoinTaskPayload',
+          me: {
+            __typename: 'User',
+            id: profile.id,
+            status: UserStatus.FLOW,
+            currentTask: {
+              __typename: 'Task',
+              id: task.id,
+              status: TaskStatus.IN_PROGRESS,
+            },
+          },
+          task: {
+            __typename: 'Task',
+            id: task.id,
+            status: TaskStatus.IN_PROGRESS,
+          },
+        },
+      },
+    });
+  }, [task.id, joinTask, profile.id]);
 
   const [setResponse, { loading: setting }] = useMutation<
     SetResponseMutation,
@@ -285,6 +404,24 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
                   >
                     Edit
                   </Link>
+                )}
+                {task.status === TaskStatus.READY && (
+                  <button
+                    type="button"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3  sm:mt-0 sm:w-auto sm:text-sm"
+                    onClick={handleStartTask}
+                  >
+                    Start
+                  </button>
+                )}
+                {task.status === TaskStatus.IN_PROGRESS && (
+                  <button
+                    type="button"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3  sm:mt-0 sm:w-auto sm:text-sm"
+                    onClick={handleJoinTask}
+                  >
+                    Join
+                  </button>
                 )}
                 <button
                   type="button"

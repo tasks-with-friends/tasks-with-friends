@@ -19,7 +19,7 @@ import {
   RejectInvitationMutationVariables,
 } from './__generated__/RejectInvitationMutation';
 
-const GET_DASHBOARD = gql`
+export const GET_DASHBOARD = gql`
   ${TASK_LIST_ITEM}
   query GetDashboardQuery {
     tasks(filter: READY) {

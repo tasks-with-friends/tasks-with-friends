@@ -11,7 +11,7 @@ import { TestUtility } from './sql-test-utility';
 import { SqlUserService } from './sql-user-service';
 import { StatusCalculator } from './status-calculator';
 
-const schema = process.env['DB_SCHEMA'] || '';
+const schema = 'public';
 let pool: Pool;
 let statusCalculator: StatusCalculator;
 let db: TestUtility;
@@ -32,6 +32,7 @@ describe.skip('SqlTaskService', () => {
     await pool.query(
       `DELETE FROM public.friends where 1=1;
       DELETE FROM public.participants where 1=1;
+      UPDATE public.users SET current_task_external_id = NULL;
       DELETE FROM public.tasks where 1=1;
       DELETE FROM public.invitations where 1=1;
       DELETE FROM public.users where 1=1;`,
@@ -536,6 +537,175 @@ describe.skip('SqlTaskService', () => {
       // Ensure the task is now in a ready state
       t1 = await db.as(me).getTask(t1.id);
       expect(t1.status).toEqual<TaskStatus>('ready');
+    });
+
+    it('works when starting a task', async () => {
+      // ARRANGE
+      let [me, them] = await db.createUsers(2);
+      me = await db.as(me).setStatus('idle');
+      them = await db.as(them).setStatus('idle');
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+      let t2 = await db.as(me).createTask({ groupSize: 2 });
+      await db.as(me).addParticipant(t1, them);
+      await db.as(me).addParticipant(t2, them);
+      await db.as(them).respond(t1, 'yes');
+      await db.as(them).respond(t2, 'yes');
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+
+      // ACT
+      t1 = await db.as(me).startTask(t1);
+
+      // ASSERT
+      t2 = await db.as(me).getTask(t2.id);
+      me = await db.getUser(me.id);
+      them = await db.getUser(them.id);
+      expect(t1.status).toEqual<TaskStatus>('in-progress');
+      expect(t2.status).toEqual<TaskStatus>('waiting');
+      expect(me.status).toEqual<UserStatus>('flow');
+      expect(me.currentTaskId).toEqual<string>(t1.id);
+      expect(them.status).toEqual<UserStatus>('idle');
+      expect(them.currentTaskId).toBeUndefined();
+    });
+
+    it('works when joining a task', async () => {
+      // ARRANGE
+      let [me, them] = await db.createUsers(2);
+      me = await db.as(me).setStatus('idle');
+      them = await db.as(them).setStatus('idle');
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+      let t2 = await db.as(me).createTask({ groupSize: 2 });
+      await db.as(me).addParticipant(t1, them);
+      await db.as(me).addParticipant(t2, them);
+      await db.as(them).respond(t1, 'yes');
+      await db.as(them).respond(t2, 'yes');
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+      t1 = await db.as(me).startTask(t1);
+
+      // ACT
+      t1 = await db.as(them).joinTask(t1);
+
+      // ASSERT
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      me = await db.getUser(me.id);
+      them = await db.getUser(them.id);
+      expect(t1.status).toEqual<TaskStatus>('in-progress');
+      expect(t2.status).toEqual<TaskStatus>('waiting');
+      expect(me.status).toEqual<UserStatus>('flow');
+      expect(me.currentTaskId).toEqual<string>(t1.id);
+      expect(them.status).toEqual<UserStatus>('flow');
+      expect(them.currentTaskId).toEqual<string>(t1.id);
+    });
+
+    it('works when ending a task', async () => {
+      // ARRANGE
+      let [me, them] = await db.createUsers(2);
+      me = await db.as(me).setStatus('idle');
+      them = await db.as(them).setStatus('idle');
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+      let t2 = await db.as(me).createTask({ groupSize: 2 });
+      await db.as(me).addParticipant(t1, them);
+      await db.as(me).addParticipant(t2, them);
+      await db.as(them).respond(t1, 'yes');
+      await db.as(them).respond(t2, 'yes');
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+      t1 = await db.as(me).startTask(t1);
+      t2 = await db.as(me).getTask(t2.id);
+      expect(t1.status).toEqual<TaskStatus>('in-progress');
+      expect(t2.status).toEqual<TaskStatus>('waiting');
+
+      // ACT
+      t1 = await db.as(me).endTask(t1);
+
+      // ASSERT
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      me = await db.getUser(me.id);
+      them = await db.getUser(them.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+      expect(me.status).toEqual<UserStatus>('idle');
+      expect(me.currentTaskId).toBeUndefined();
+      expect(them.status).toEqual<UserStatus>('idle');
+      expect(them.currentTaskId).toBeUndefined();
+    });
+
+    it('works when leaving a task NOT as the last participant', async () => {
+      // ARRANGE
+      let [me, them] = await db.createUsers(2);
+      me = await db.as(me).setStatus('idle');
+      them = await db.as(them).setStatus('idle');
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+      let t2 = await db.as(me).createTask({ groupSize: 2 });
+      await db.as(me).addParticipant(t1, them);
+      await db.as(me).addParticipant(t2, them);
+      await db.as(them).respond(t1, 'yes');
+      await db.as(them).respond(t2, 'yes');
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+      t1 = await db.as(me).startTask(t1);
+      t1 = await db.as(them).joinTask(t1);
+
+      // ACT
+      t1 = await db.as(me).leaveTask(t1);
+
+      // ASSERT
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      me = await db.getUser(me.id);
+      them = await db.getUser(them.id);
+      expect(t1.status).toEqual<TaskStatus>('in-progress');
+      expect(t2.status).toEqual<TaskStatus>('waiting');
+      expect(me.status).toEqual<UserStatus>('idle');
+      expect(me.currentTaskId).toBeUndefined();
+      expect(them.status).toEqual<UserStatus>('flow');
+      expect(them.currentTaskId).toEqual<string>(t1.id);
+    });
+
+    it('works when leaving a task as the last participant', async () => {
+      // ARRANGE
+      let [me, them] = await db.createUsers(2);
+      me = await db.as(me).setStatus('idle');
+      them = await db.as(them).setStatus('idle');
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+      let t2 = await db.as(me).createTask({ groupSize: 2 });
+      await db.as(me).addParticipant(t1, them);
+      await db.as(me).addParticipant(t2, them);
+      await db.as(them).respond(t1, 'yes');
+      await db.as(them).respond(t2, 'yes');
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+      t1 = await db.as(me).startTask(t1);
+      t1 = await db.as(them).joinTask(t1);
+
+      // ACT
+      t1 = await db.as(me).leaveTask(t1);
+      t1 = await db.as(them).leaveTask(t1);
+
+      // ASSERT
+      t1 = await db.as(me).getTask(t1.id);
+      t2 = await db.as(me).getTask(t2.id);
+      me = await db.getUser(me.id);
+      them = await db.getUser(them.id);
+      expect(t1.status).toEqual<TaskStatus>('ready');
+      expect(t2.status).toEqual<TaskStatus>('ready');
+      expect(me.status).toEqual<UserStatus>('idle');
+      expect(me.currentTaskId).toBeUndefined();
+      expect(them.status).toEqual<UserStatus>('idle');
+      expect(them.currentTaskId).toBeUndefined();
     });
   });
 });

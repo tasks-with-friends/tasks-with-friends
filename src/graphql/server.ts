@@ -10,7 +10,6 @@ export type Root = schema.Query & schema.Mutation;
 
 export const root: Root = {
   me: async (_, { profile, registry }) => {
-    console.log();
     const users = await registry
       .get('user-service')
       .getUsers({ userIds: [profile.id] });
@@ -215,5 +214,41 @@ export const root: Root = {
     });
 
     return { me: userDto(me) };
+  },
+  startTask: async ({ input }, { profile, registry }) => {
+    const task = await registry.get('task-service').startTask(input);
+
+    const user = await registry
+      .get('user-service')
+      .getUser({ userId: profile.id });
+
+    return { me: userDto(user), task: taskDto(task) };
+  },
+  joinTask: async ({ input }, { profile, registry }) => {
+    const task = await registry.get('task-service').joinTask(input);
+
+    const user = await registry
+      .get('user-service')
+      .getUser({ userId: profile.id });
+
+    return { me: userDto(user), task: taskDto(task) };
+  },
+  endTask: async ({ input }, { profile, registry }) => {
+    const task = await registry.get('task-service').endTask(input);
+
+    const user = await registry
+      .get('user-service')
+      .getUser({ userId: profile.id });
+
+    return { me: userDto(user), task: taskDto(task) };
+  },
+  leaveTask: async ({ input }, { profile, registry }) => {
+    const task = await registry.get('task-service').leaveTask(input);
+
+    const user = await registry
+      .get('user-service')
+      .getUser({ userId: profile.id });
+
+    return { me: userDto(user), task: taskDto(task) };
   },
 };

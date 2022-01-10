@@ -15,6 +15,8 @@ import {
 import { StatusCalculator } from './status-calculator';
 import { buildInClause, buildPage, Mapping, parsePage, using } from './utils';
 
+const afterInProgress = 'ready';
+
 export class SqlTaskService implements TaskService {
   constructor(
     private readonly pool: Pool,
@@ -22,6 +24,120 @@ export class SqlTaskService implements TaskService {
     private readonly statusCalculator: StatusCalculator,
     private readonly currentUserId?: string,
   ) {}
+  async leaveTask({ taskId }: { taskId: string }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
+    await this.pool.query(
+      `UPDATE ${this.schema}.users
+        SET status = 'idle', current_task_external_id = NULL
+        WHERE external_id = $1`,
+      [this.currentUserId],
+    );
+
+    const { rowCount } = await this.pool.query<{ id: number }>(
+      `SELECT p.id FROM ${this.schema}.participants p
+          JOIN ${this.schema}.users u ON p.user_external_id = u.external_id
+          WHERE p.task_external_id = $1 AND u.status = 'flow'`,
+      [taskId],
+    );
+
+    if (rowCount === 0) {
+      await this.pool.query<{ flow_count: number }>(
+        `UPDATE ${this.schema}.tasks
+          SET status = '${afterInProgress}'
+          WHERE external_id = $1`,
+        [taskId],
+      );
+    }
+
+    await this.statusCalculator.recalculateTaskStatusForUsers([
+      this.currentUserId,
+    ]);
+
+    return this.getTask({ taskId });
+  }
+  async endTask({ taskId }: { taskId: string; body?: any }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
+    // TODO: ensure that the current user is a flow participant and the task is in progress
+
+    // Set task to done
+    const affected = (
+      await this.pool.query(
+        `UPDATE ${this.schema}.tasks
+          SET status = '${afterInProgress}'
+          WHERE status = 'in-progress' AND external_id = $1`,
+        [taskId],
+      )
+    ).rowCount;
+    if (!affected) throw new Error('Not found');
+
+    // Set all flow participants to idle
+    const userIds = (
+      await this.pool.query<{ external_id: string }>(
+        `UPDATE ${this.schema}.users
+        SET status = 'idle', current_task_external_id = NULL
+        WHERE current_task_external_id = $1
+        RETURNING external_id`,
+        [taskId],
+      )
+    ).rows.map((r) => r.external_id);
+
+    // recalculate status
+    await this.statusCalculator.recalculateTaskStatusForUsers(userIds);
+
+    return this.getTask({ taskId });
+  }
+
+  async joinTask({ taskId }: { taskId: string }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
+    // TODO: ensure that the current user is a idle participant and the task is in progress
+
+    await this.pool.query(
+      `UPDATE ${this.schema}.users
+        SET status = 'flow', current_task_external_id = $2
+        WHERE external_id = $1`,
+      [this.currentUserId, taskId],
+    );
+
+    await this.statusCalculator.recalculateTaskStatusForUsers([
+      this.currentUserId,
+    ]);
+
+    return this.getTask({ taskId });
+  }
+  async startTask({ taskId }: { taskId: string }): Promise<Task> {
+    if (!this.currentUserId) throw new Error('Unauthorized');
+
+    // TODO: ensure that the current user is a idle participant
+
+    // Set the task to 'in-progress'
+    const result1 = await this.pool.query(
+      `UPDATE ${this.schema}.tasks
+          SET status = 'in-progress'
+          WHERE status = 'ready' AND external_id = $1
+          RETURNING *`,
+      [taskId],
+    );
+
+    const affected = result1.rowCount;
+
+    if (!affected) throw new Error('Not found');
+
+    const result2 = await this.pool.query(
+      `UPDATE ${this.schema}.users
+        SET status = 'flow', current_task_external_id = $2
+        WHERE external_id = $1`,
+      [this.currentUserId, taskId],
+    );
+
+    await this.statusCalculator.recalculateTaskStatusForUsers([
+      this.currentUserId,
+    ]);
+
+    return this.getTask({ taskId });
+  }
 
   async createTask(params: { task: NewTask }): Promise<Task> {
     if (!this.currentUserId) throw new Error('Unauthorized');
