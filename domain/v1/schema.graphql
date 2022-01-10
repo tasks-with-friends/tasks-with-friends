@@ -59,6 +59,10 @@ type Mutation {
   addTask(input: AddTaskInput!): AddTaskPayload!
   setUserStatus(input: SetUserStatusInput!): SetUserStatusPayload!
   editTask(input: EditTaskInput!): EditTaskPayload!
+  startTask(input: StartTaskInput!): StartTaskPayload!
+  joinTask(input: JoinTaskInput!): JoinTaskPayload!
+  leaveTask(input: LeaveTaskInput!): LeaveTaskPayload!
+  endTask(input: EndTaskInput!): EndTaskPayload!
   removeTask(input: RemoveTaskInput!): RemoveTaskPayload!
   setResponse(input: SetResponseInput!): SetResponsePayload!
   clearResponse(input: ClearResponseInput!): ClearResponsePayload!
@@ -233,11 +237,46 @@ input EditTaskInput {
   durationMinutes: Int
   groupSize: Int
   name: String
-  status: String
   participants: IdCollection
 }
 
 type EditTaskPayload {
+  task: Task!
+}
+
+input StartTaskInput {
+  taskId: ID!
+}
+
+type StartTaskPayload {
+  me: User!
+  task: Task!
+}
+
+input JoinTaskInput {
+  taskId: ID!
+}
+
+type JoinTaskPayload {
+  me: User!
+  task: Task!
+}
+
+input LeaveTaskInput {
+  taskId: ID!
+}
+
+type LeaveTaskPayload {
+  me: User!
+  task: Task!
+}
+
+input EndTaskInput {
+  taskId: ID!
+}
+
+type EndTaskPayload {
+  me: User!
   task: Task!
 }
 
