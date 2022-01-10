@@ -204,6 +204,94 @@
         }
       }
     },
+    "/tasks/:taskId/join": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true }
+      ],
+      "post": {
+        "operationId": "joinTask",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {},
+            "required": false
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId/leave": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true }
+      ],
+      "post": {
+        "operationId": "leaveTask",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {},
+            "required": false
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId/start": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true }
+      ],
+      "post": {
+        "operationId": "startTask",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {},
+            "required": false
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      }
+    },
+    "/tasks/:taskId/end": {
+      "parameters": [
+        { "in": "path", "name": "taskId", "type": "string", "required": true }
+      ],
+      "post": {
+        "operationId": "endTask",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {},
+            "required": false
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": { "$ref": "#/definitions/task" }
+          }
+        }
+      }
+    },
     "/tasks/:taskId/participants": {
       "parameters": [
         { "in": "path", "name": "taskId", "type": "string", "required": true }
