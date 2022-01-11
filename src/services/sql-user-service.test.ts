@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { User, UserPage } from '../domain/v1/api.g';
+import { NullRealTime } from './null-real-time';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlUserService } from './sql-user-service';
 import { StatusCalculator } from './status-calculator';
@@ -16,7 +17,11 @@ describe.skip('SqlUserService', () => {
       password: process.env['POSTGRES_PASSWORD'],
       port: 5432,
     });
-    statusCalculator = new SqlStatusCalculator(pool, schema);
+    statusCalculator = new SqlStatusCalculator(
+      pool,
+      schema,
+      new NullRealTime(),
+    );
   });
 
   beforeEach(async () => {

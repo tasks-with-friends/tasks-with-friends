@@ -6,6 +6,8 @@ import { buildInfo } from './build-info';
 import { ProfileProvider } from './profile-provider';
 import { Router } from './router';
 
+import { RealTimeProvider } from './components/real-time-provider';
+
 console.log(JSON.stringify(buildInfo, null, 2));
 
 const apolloClient = new ApolloClient({
@@ -16,7 +18,9 @@ const apolloClient = new ApolloClient({
 render(
   <ApolloProvider client={apolloClient}>
     <ProfileProvider>
-      <Router />
+      <RealTimeProvider>
+        <Router />
+      </RealTimeProvider>
     </ProfileProvider>
   </ApolloProvider>,
   document.getElementById('app-root'),

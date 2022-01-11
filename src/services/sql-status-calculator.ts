@@ -1,9 +1,15 @@
 import { Pool } from 'pg';
+import Pusher from 'pusher';
 import { TaskStatus } from '../domain/v1/api.g';
+import { RealTime } from './real-time';
 import { StatusCalculator } from './status-calculator';
 
 export class SqlStatusCalculator implements StatusCalculator {
-  constructor(private readonly pool: Pool, private readonly schema: string) {}
+  constructor(
+    private readonly pool: Pool,
+    private readonly schema: string,
+    private readonly realTime: RealTime,
+  ) {}
   async recalculateTaskStatus(
     taskIds: string[],
   ): Promise<{ taskId: string; status: TaskStatus }[]> {
@@ -79,6 +85,45 @@ export class SqlStatusCalculator implements StatusCalculator {
           )})`,
         ready,
       );
+    }
+
+    try {
+      const changed = [...ready, ...waiting];
+      if (changed.length) {
+        console.log({ changed });
+        const userTasks = (
+          await this.pool.query<{
+            user_external_id: string;
+            task_external_id: string;
+          }>(
+            `SELECT user_external_id, task_external_id FROM ${
+              this.schema
+            }.participants WHERE task_external_id IN (${changed.map(
+              (_, i) => `$${i + 1}`,
+            )})`,
+            changed,
+          )
+        ).rows;
+        console.log({ userTasks });
+
+        const usersToUpdate = userTasks.reduce<Record<string, Set<string>>>(
+          (acc, item) => {
+            acc[item.user_external_id] ||= new Set();
+            acc[item.user_external_id].add(item.task_external_id);
+            return acc;
+          },
+          {},
+        );
+        console.log({ usersToUpdate });
+
+        Object.keys(usersToUpdate).forEach((userId) =>
+          this.realTime.trigger(userId, 'task-status:v1', {
+            taskIds: Array.from(usersToUpdate[userId]),
+          }),
+        );
+      }
+    } catch (ex) {
+      console.error('cannot send real-time notifications', ex);
     }
 
     return [

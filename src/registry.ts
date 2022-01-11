@@ -1,12 +1,14 @@
-import { Registry } from 'ts-registry';
+import { Registry, singleton } from 'ts-registry';
+import { Pool } from 'pg';
+import Pusher from 'pusher';
 
 import { InvitationService, UserService, TaskService } from './domain/v1/api.g';
-import { Pool } from 'pg';
 import { SqlUserService } from './services/sql-user-service';
 import { SqlInvitationService } from './services/sql-invitation-service';
 import { SqlTaskService } from './services/sql-task-service';
 import { StatusCalculator } from './services/status-calculator';
 import { SqlStatusCalculator } from './services/sql-status-calculator';
+import { RealTime } from './services/real-time';
 
 export type ServiceMap = {
   'current-user-id': string | undefined;
@@ -14,6 +16,7 @@ export type ServiceMap = {
   'task-service': TaskService;
   'user-service': UserService;
   'status-calculator': StatusCalculator;
+  'real-time': RealTime;
   pool: Pool;
 };
 
@@ -60,7 +63,11 @@ registry
   .for('status-calculator')
   .use(
     (get) =>
-      new SqlStatusCalculator(get('pool'), process.env['DB_SCHEMA'] || ''),
+      new SqlStatusCalculator(
+        get('pool'),
+        process.env['DB_SCHEMA'] || '',
+        get('real-time'),
+      ),
   );
 
 // registry.for('pool').use(
@@ -74,17 +81,20 @@ registry
 //     }),
 // );
 
-registry.for('pool').use(
-  () =>
-    new Pool({
-      user: process.env['COCKROACH_DB_USERNAME'],
-      host: process.env['COCKROACH_DB_HOST'] || '127.0.0.1',
-      database: process.env['COCKROACH_DB_DATABASE'],
-      password: process.env['COCKROACH_DB_PASSWORD'],
-      port: Number(process.env['COCKROACH_DB_PORT']),
-      ssl: true,
-    }),
-);
+registry
+  .for('pool')
+  .withScope(singleton)
+  .use(
+    () =>
+      new Pool({
+        user: process.env['COCKROACH_DB_USERNAME'],
+        host: process.env['COCKROACH_DB_HOST'] || '127.0.0.1',
+        database: process.env['COCKROACH_DB_DATABASE'],
+        password: process.env['COCKROACH_DB_PASSWORD'],
+        port: Number(process.env['COCKROACH_DB_PORT']),
+        ssl: true,
+      }),
+  );
 
 // registry.for('fauna').use(
 //   () =>
@@ -94,3 +104,17 @@ registry.for('pool').use(
 //       scheme: 'https',
 //     }),
 // );
+
+registry
+  .for('real-time')
+  .withScope(singleton)
+  .use(
+    () =>
+      new Pusher({
+        appId: process.env['PUSHER_APP_ID'] || '',
+        key: process.env['PUSHER_KEY'] || '',
+        secret: process.env['PUSHER_SECRET'] || '',
+        cluster: process.env['PUSHER_CLUSTER'] || '',
+        useTLS: true,
+      }),
+  );
