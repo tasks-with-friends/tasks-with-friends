@@ -14,7 +14,7 @@
     "build:client-types": "npx apollo codegen:generate --localSchemaFile=domain/v1/schema.graphql --target=typescript --tagName=gql",
     "build:webpack": "webpack --config webpack.prod.js",
     "build:functions": "webpack --config webpack.functions.js",
-    "postbuild:functions": "ts-node tools/strip-require ./build/functions/auth.js",
+    "postbuild:functions": "ts-node tools/strip-require ./build/functions/auth.js && ts-node tools/strip-require ./build/functions/graphql.js",
     "//build:tsc": "tsc -p tsconfig.build.json",
     "build:tailwind": "tailwindcss -i src/tailwind.css -o build/dist/tailwind.css",
     "clean": "run-s clean:*",
