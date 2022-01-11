@@ -24,7 +24,7 @@ module.exports = {
     },
   },
   resolve: {
-    extensions: ['.js', '.ts'],
+    extensions: ['.js', '.ts', '.json'],
     alias: {
       'pg-native': path.join(__dirname, 'webpack-aliases/pg-native.js'),
       pgpass$: path.join(__dirname, 'webpack-aliases/pgpass.js'),
