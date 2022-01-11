@@ -9,6 +9,7 @@ import {
   User,
   UserStatus,
 } from '../domain/v1/api.g';
+import { NullRealTime } from './null-real-time';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlTaskService } from './sql-task-service';
 import { SqlUserService } from './sql-user-service';
@@ -16,7 +17,11 @@ import { StatusCalculator } from './status-calculator';
 
 export class TestUtility {
   constructor(private readonly pool: Pool, private readonly schema: string) {
-    this.statusCalculator = new SqlStatusCalculator(this.pool, this.schema);
+    this.statusCalculator = new SqlStatusCalculator(
+      this.pool,
+      this.schema,
+      new NullRealTime(),
+    );
   }
   private readonly statusCalculator: StatusCalculator;
 
@@ -63,7 +68,11 @@ export class UserScopedTestUtility {
     private readonly pool: Pool,
     private readonly schema: string,
   ) {
-    this.statusCalculator = new SqlStatusCalculator(this.pool, this.schema);
+    this.statusCalculator = new SqlStatusCalculator(
+      this.pool,
+      this.schema,
+      new NullRealTime(),
+    );
     this.taskService = new SqlTaskService(
       this.pool,
       this.schema,

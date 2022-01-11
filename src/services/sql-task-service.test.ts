@@ -5,6 +5,7 @@ import {
   TaskStatus,
   UserStatus,
 } from '../domain/v1/api.g';
+import { NullRealTime } from './null-real-time';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlTaskService } from './sql-task-service';
 import { TestUtility } from './sql-test-utility';
@@ -24,7 +25,11 @@ describe.skip('SqlTaskService', () => {
       password: process.env['POSTGRES_PASSWORD'],
       port: 5432,
     });
-    statusCalculator = new SqlStatusCalculator(pool, schema);
+    statusCalculator = new SqlStatusCalculator(
+      pool,
+      schema,
+      new NullRealTime(),
+    );
     db = new TestUtility(pool, schema);
   });
 
