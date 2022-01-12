@@ -7,6 +7,10 @@ type Query {
   """
   me: User!
   """
+  Gets a user by ID.
+  """
+  user(id: ID!): User
+  """
   The friends of the currently logged in user.
   """
   friends(first: Int, last: Int, after: String, before: String): UserConnection!

@@ -10,6 +10,7 @@ import {
   UserStatus,
 } from '../domain/v1/api.g';
 import { NullRealTime } from './null-real-time';
+import { NullMessageBus } from './real-time';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlTaskService } from './sql-task-service';
 import { SqlUserService } from './sql-user-service';
@@ -20,7 +21,7 @@ export class TestUtility {
     this.statusCalculator = new SqlStatusCalculator(
       this.pool,
       this.schema,
-      new NullRealTime(),
+      new NullMessageBus(),
     );
   }
   private readonly statusCalculator: StatusCalculator;
@@ -31,6 +32,7 @@ export class TestUtility {
       this.pool,
       this.schema,
       this.statusCalculator,
+      new NullMessageBus(),
     ).getOrCreateUser({
       user: {
         name: name.join(' '),
@@ -54,6 +56,7 @@ export class TestUtility {
       this.pool,
       this.schema,
       this.statusCalculator,
+      new NullMessageBus(),
     ).getUser({ userId });
   }
 
@@ -71,12 +74,13 @@ export class UserScopedTestUtility {
     this.statusCalculator = new SqlStatusCalculator(
       this.pool,
       this.schema,
-      new NullRealTime(),
+      new NullMessageBus(),
     );
     this.taskService = new SqlTaskService(
       this.pool,
       this.schema,
       this.statusCalculator,
+      new NullMessageBus(),
       user.id,
     );
   }
@@ -88,6 +92,7 @@ export class UserScopedTestUtility {
       this.pool,
       this.schema,
       this.statusCalculator,
+      new NullMessageBus(),
       this.user.id,
     ).updateUser({ userId: this.user.id, userUpdate: { status } });
   }

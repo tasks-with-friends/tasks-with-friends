@@ -7,6 +7,7 @@ import {
   UserService,
   UserUpdate,
 } from '../domain/v1/api.g';
+import { MessageBus } from './real-time';
 import { StatusCalculator } from './status-calculator';
 import { buildPage, Mapping, parsePage, using } from './utils';
 
@@ -15,6 +16,7 @@ export class SqlUserService implements UserService {
     private readonly pool: Pool,
     private readonly schema: string,
     private readonly statusCalculator: StatusCalculator,
+    private readonly messages: MessageBus,
     private readonly currentUserId?: string,
   ) {}
 
@@ -65,6 +67,8 @@ export class SqlUserService implements UserService {
     const { userId } = params;
     if (userId !== this.currentUserId) throw new Error('Forbidden');
 
+    const originalUser = await this.getUser({ userId: params.userId });
+
     const UNSANITIZED_fields: string[] = [];
     const values: any[] = [];
     const { status, currentTaskId } = params.userUpdate;
@@ -96,7 +100,13 @@ export class SqlUserService implements UserService {
 
     await this.statusCalculator.recalculateTaskStatusForUsers([params.userId]);
 
-    return this.getUser({ userId: params.userId });
+    const finalUser = await this.getUser({ userId: params.userId });
+
+    if (finalUser.status !== originalUser.status) {
+      this.messages.onUserStatusChanged([finalUser.id]);
+    }
+
+    return finalUser;
   }
 
   private async getSortValue<T>(
