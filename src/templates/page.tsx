@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import { UserStatus } from '../../__generated__/globalTypes';
 import { useStatus } from '../components/use-status';
 import { Flow } from '../pages/flow';
+import { Avatar } from '../components/avatar';
 
 const navigation = [
   { name: 'Dashboard', to: '/', current: true },
@@ -122,10 +123,12 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                         <div>
                           <Menu.Button className="max-w-xs bg-gray-800 rounded-full flex items-center text-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white">
                             <span className="sr-only">Open user menu</span>
-                            <img
-                              className="h-8 w-8 rounded-full"
-                              src={profile.avatarUrl}
-                              alt=""
+                            <Avatar
+                              key={profile.id}
+                              size="sm"
+                              name={profile.name}
+                              avatarUrl={profile.avatarUrl || undefined}
+                              status={status}
                             />
                           </Menu.Button>
                         </div>
@@ -206,10 +209,12 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                 <div className="pt-4 pb-3 border-t border-gray-700">
                   <div className="flex items-center px-5">
                     <div className="flex-shrink-0">
-                      <img
-                        className="h-10 w-10 rounded-full"
-                        src={profile.avatarUrl}
-                        alt=""
+                      <Avatar
+                        key={profile.id}
+                        size="md"
+                        name={profile.name}
+                        avatarUrl={profile.avatarUrl || undefined}
+                        status={status}
                       />
                     </div>
                     <div className="ml-3">

@@ -1,6 +1,7 @@
 import { gql, useMutation } from '@apollo/client';
 import React, { useCallback, useEffect } from 'react';
 import { TaskStatus, UserStatus } from '../../__generated__/globalTypes';
+import { Avatar } from '../components/avatar';
 import { useStatus } from '../components/use-status';
 import { useTask } from '../components/use-task';
 import { TaskListItem } from '../components/__generated__/TaskListItem';
@@ -127,11 +128,18 @@ const TaskDisplay: React.VFC<{
       <ul className="flex flex-row flex-wrap justify-center">
         {currentTask.participants.nodes.map((participant) => (
           <li key={participant.id}>
-            <img
+            <Avatar
+              key={participant.user.id}
+              size="2xl"
+              name={participant.user.name}
+              avatarUrl={participant.user.avatarUrl || undefined}
+              status={participant.user.status}
+            />
+            {/* <img
               className="inline-block h-14 w-14 rounded-full m-3 border border-gray-300/75 drop-shadow-xl"
               src={participant.user.avatarUrl || ''}
               alt={participant.user.name}
-            />
+            /> */}
           </li>
         ))}
       </ul>

@@ -3,6 +3,7 @@ import { ChevronRightIcon } from '@heroicons/react/solid';
 import React, { useMemo } from 'react';
 import { ParticipantResponse } from '../../__generated__/globalTypes';
 import { useProfile } from '../profile-provider';
+import { Avatar } from './avatar';
 import { useTaskModal } from './task-modal';
 import { TaskListItem } from './__generated__/TaskListItem';
 
@@ -17,6 +18,7 @@ export const TASK_LIST_ITEM = gql`
     owner {
       id
       name
+      status
       avatarUrl
     }
     participants(first: 100) {
@@ -27,6 +29,7 @@ export const TASK_LIST_ITEM = gql`
           id
           name
           email
+          status
           avatarUrl
         }
       }
@@ -96,11 +99,12 @@ const TaskItem: React.VFC<{ task: TaskListItem }> = ({ task }) => {
               <div className="mt-4 flex-shrink-0 sm:mt-0 sm:ml-5">
                 <div className="flex overflow-hidden -space-x-1">
                   {task.participants.nodes.map((node) => (
-                    <img
+                    <Avatar
                       key={node.user.id}
-                      className="inline-block h-6 w-6 rounded-full ring-2 ring-white"
-                      src={node.user.avatarUrl || ''}
-                      alt={node.user.name}
+                      size="xs"
+                      name={node.user.name}
+                      avatarUrl={node.user.avatarUrl || undefined}
+                      status={node.user.status}
                     />
                   ))}
                 </div>

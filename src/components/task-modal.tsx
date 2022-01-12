@@ -8,6 +8,7 @@ import {
   UserStatus,
 } from '../../__generated__/globalTypes';
 import { useProfile } from '../profile-provider';
+import { Avatar } from './avatar';
 import {
   ClearResponseMutation,
   ClearResponseMutationVariables,
@@ -375,10 +376,12 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
                   <li key={participant.user.id} className="px-4 py-2 sm:px-0">
                     <div className="flex items-center">
                       <div>
-                        <img
-                          className="inline-block h-6 w-6 rounded-full"
-                          src={participant.user.avatarUrl || ''}
-                          alt={participant.user.name}
+                        <Avatar
+                          key={participant.user.id}
+                          size="xs"
+                          name={participant.user.name}
+                          avatarUrl={participant.user.avatarUrl || undefined}
+                          status={participant.user.status}
                         />
                       </div>
                       <div className="ml-3 flex-1">

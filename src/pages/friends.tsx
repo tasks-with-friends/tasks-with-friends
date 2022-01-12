@@ -2,6 +2,7 @@
 import { gql, useMutation, useQuery } from '@apollo/client';
 import { PaperAirplaneIcon, MailIcon } from '@heroicons/react/outline';
 import React, { useCallback, useState } from 'react';
+import { Avatar } from '../components/avatar';
 
 import { Page } from '../templates/page';
 import { ConfirmationModal } from './confirmation-modal';
@@ -173,11 +174,18 @@ const FriendItem: React.VFC<{
       <li className="py-4">
         <div className="flex items-center space-x-4">
           <div className="flex-shrink-0">
-            <img
+            <Avatar
+              key={person.id}
+              size="sm"
+              name={person.name}
+              avatarUrl={person.avatarUrl || undefined}
+              status={person.status}
+            />
+            {/* <img
               className="h-8 w-8 rounded-full"
               src={person.avatarUrl || ''}
               alt=""
-            />
+            /> */}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">

@@ -14,6 +14,8 @@ import {
   GetFriendPickerQuery_friends_nodes as Friend,
 } from './__generated__/GetFriendPickerQuery';
 import { useProfile } from '../../profile-provider';
+import { Avatar } from '../../components/avatar';
+import { UserStatus } from '../../../__generated__/globalTypes';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ');
@@ -158,6 +160,7 @@ export type Participant = {
   id: string;
   name: string;
   email: string;
+  status: UserStatus;
   avatarUrl?: string;
 };
 
@@ -323,11 +326,18 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
             <li className="py-4">
               <div className="flex items-center space-x-4">
                 <div className="flex-shrink-0">
-                  <img
+                  <Avatar
+                    key={person.id}
+                    size="sm"
+                    name={person.name}
+                    avatarUrl={person.avatarUrl || undefined}
+                    status={person.status}
+                  />
+                  {/* <img
                     className="h-8 w-8 rounded-full"
                     src={person.avatarUrl || ''}
                     alt=""
-                  />
+                  /> */}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 truncate">
@@ -437,6 +447,7 @@ export const UserPicker: React.VFC<{
         id: friend.id,
         name: friend.name,
         email: friend.email,
+        status: friend.status,
         avatarUrl: friend.avatarUrl || undefined,
       });
     },
@@ -455,11 +466,18 @@ export const UserPicker: React.VFC<{
               <span className="flex items-center">
                 {selected ? (
                   <>
-                    <img
+                    <Avatar
+                      key={selected.id}
+                      size="xs"
+                      name={selected.name}
+                      avatarUrl={selected.avatarUrl || undefined}
+                      status={selected.status}
+                    />
+                    {/* <img
                       src={selected.avatarUrl || ''}
                       alt=""
                       className="flex-shrink-0 h-6 w-6 rounded-full"
-                    />
+                    /> */}
                     <span className="ml-3 block truncate">{selected.name}</span>
                   </>
                 ) : (
@@ -496,11 +514,18 @@ export const UserPicker: React.VFC<{
                     {({ selected: isSelected, active }) => (
                       <>
                         <div className="flex items-center">
-                          <img
+                          <Avatar
+                            key={person.id}
+                            size="xs"
+                            name={person.name}
+                            avatarUrl={person.avatarUrl || undefined}
+                            status={person.status}
+                          />
+                          {/* <img
                             src={person.avatarUrl || ''}
                             alt=""
                             className="flex-shrink-0 h-6 w-6 rounded-full"
-                          />
+                          /> */}
                           <span
                             className={classNames(
                               isSelected ? 'font-semibold' : 'font-normal',
