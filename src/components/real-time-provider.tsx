@@ -8,12 +8,25 @@ import {
   RecacheTaskStatusQuery,
   RecacheTaskStatusQueryVariables,
 } from './__generated__/RecacheTaskStatusQuery';
+import {
+  RecacheUserStatusQuery,
+  RecacheUserStatusQueryVariables,
+} from './__generated__/RecacheUserStatusQuery';
 
-// Pusher.logToConsole = true;
+Pusher.logToConsole = true;
 
 const RECACHE_TASK_STATUS = gql`
   query RecacheTaskStatusQuery($taskId: ID!) {
     task(id: $taskId) {
+      id
+      status
+    }
+  }
+`;
+
+const RECACHE_USER_STATUS = gql`
+  query RecacheUserStatusQuery($userId: ID!) {
+    user(id: $userId) {
       id
       status
     }
@@ -43,6 +56,18 @@ export const RealTimeProvider: React.FC = ({ children }) => {
         }
       });
 
+      handleEvent(channel, 'user-status:v1', ({ userIds }) => {
+        for (const userId of userIds) {
+          client.query<RecacheUserStatusQuery, RecacheUserStatusQueryVariables>(
+            {
+              query: RECACHE_USER_STATUS,
+              fetchPolicy: 'network-only',
+              variables: { userId },
+            },
+          );
+        }
+      });
+
       return () => {
         channel.unsubscribe();
       };
@@ -60,9 +85,9 @@ function handleEvent<EventName extends keyof EventMap>(
   eventName: EventName,
   callback: (data: EventMap[EventName]) => void,
 ) {
-  channel.bind(eventName, callback);
-  // channel.bind(eventName, (data) => {
-  //   console.log(eventName, data);
-  //   callback(data);
-  // });
+  // channel.bind(eventName, callback);
+  channel.bind(eventName, (data) => {
+    console.log(eventName, data);
+    callback(data);
+  });
 }

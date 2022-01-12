@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { User, UserPage } from '../domain/v1/api.g';
-import { NullRealTime } from './null-real-time';
+import { NullMessageBus } from './real-time';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlUserService } from './sql-user-service';
 import { StatusCalculator } from './status-calculator';
@@ -20,7 +20,7 @@ describe.skip('SqlUserService', () => {
     statusCalculator = new SqlStatusCalculator(
       pool,
       schema,
-      new NullRealTime(),
+      new NullMessageBus(),
     );
   });
 
@@ -41,7 +41,12 @@ describe.skip('SqlUserService', () => {
   describe('getOrCreateUser', () => {
     it('returns the same user when passed the same params', async () => {
       // ARRANGE
-      const service = new SqlUserService(pool, schema, statusCalculator);
+      const service = new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+      );
 
       // ACT
       const me = await service.getOrCreateUser({
@@ -78,7 +83,12 @@ describe.skip('SqlUserService', () => {
   describe('getUsers', () => {
     it('gets list of users by id', async () => {
       // ARRANGE
-      const service = new SqlUserService(pool, schema, statusCalculator);
+      const service = new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+      );
       const me = await service.getOrCreateUser({
         user: {
           name: 'me',
@@ -115,6 +125,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -123,7 +134,13 @@ describe.skip('SqlUserService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlUserService(pool, schema, statusCalculator, id);
+      const service = new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        id,
+      );
       const me = await service.updateUser({
         userId: id,
         userUpdate: { status: 'away' },
@@ -147,6 +164,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -159,6 +177,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'them',
@@ -167,7 +186,13 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'kjlafsdhkljadlhjfkflhjak',
         },
       });
-      const service = new SqlUserService(pool, schema, statusCalculator, me.id);
+      const service = new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       // ACT
       const result = await service.addFriendToUser({
@@ -188,6 +213,7 @@ describe.skip('SqlUserService', () => {
           pool,
           schema,
           statusCalculator,
+          new NullMessageBus(),
         ).getOrCreateUser({
           user: {
             name: 'me',
@@ -196,7 +222,12 @@ describe.skip('SqlUserService', () => {
             providerUserId: '2893674528967345',
           },
         });
-        const svc = new SqlUserService(pool, schema, statusCalculator);
+        const svc = new SqlUserService(
+          pool,
+          schema,
+          statusCalculator,
+          new NullMessageBus(),
+        );
         users = [
           await svc.getOrCreateUser({
             user: {
@@ -246,6 +277,7 @@ describe.skip('SqlUserService', () => {
               pool,
               schema,
               statusCalculator,
+              new NullMessageBus(),
               me.id,
             ).addFriendToUser({
               userId: me.id,
@@ -261,6 +293,7 @@ describe.skip('SqlUserService', () => {
           pool,
           schema,
           statusCalculator,
+          new NullMessageBus(),
           me.id,
         );
 
@@ -283,6 +316,7 @@ describe.skip('SqlUserService', () => {
           pool,
           schema,
           statusCalculator,
+          new NullMessageBus(),
           me.id,
         );
         const [a, b, c] = users;
@@ -309,6 +343,7 @@ describe.skip('SqlUserService', () => {
           pool,
           schema,
           statusCalculator,
+          new NullMessageBus(),
           me.id,
         );
         const [a, b, c, d, e] = users;
@@ -336,6 +371,7 @@ describe.skip('SqlUserService', () => {
           pool,
           schema,
           statusCalculator,
+          new NullMessageBus(),
           me.id,
         );
         const [a, b, c, d, e] = users;
@@ -366,6 +402,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -378,6 +415,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'them',
@@ -390,6 +428,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'other',
@@ -398,7 +437,13 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'akfjl973t4ny7t4donygtd',
         },
       });
-      const service = new SqlUserService(pool, schema, statusCalculator, me.id);
+      const service = new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       await service.addFriendToUser({
         userId: me.id,
@@ -410,6 +455,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         me.id,
       ).getFriendsByUserId({
         userId: me.id,
@@ -418,6 +464,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         them.id,
       ).getFriendsByUserId({
         userId: them.id,
@@ -426,6 +473,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         other.id,
       ).getFriendsByUserId({
         userId: other.id,
@@ -445,6 +493,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -457,6 +506,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'them',
@@ -465,7 +515,13 @@ describe.skip('SqlUserService', () => {
           providerUserId: 'kjlafsdhkljadlhjfkflhjak',
         },
       });
-      const service = new SqlUserService(pool, schema, statusCalculator, me.id);
+      const service = new SqlUserService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       await service.addFriendToUser({
         userId: me.id,
@@ -480,6 +536,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         me.id,
       ).getFriendsByUserId({
         userId: me.id,
@@ -488,6 +545,7 @@ describe.skip('SqlUserService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         them.id,
       ).getFriendsByUserId({
         userId: them.id,

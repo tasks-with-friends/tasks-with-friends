@@ -16,6 +16,11 @@ export const root: Root = {
 
     return userDto(users.items[0]);
   },
+  user: async ({ id }, { registry }) => {
+    const user = await registry.get('user-service').getUser({ userId: id });
+
+    return userDto(user);
+  },
   friends: async (args, { profile, registry }) => {
     const service = registry.get('user-service');
     const friends = await service.getFriendsByUserId({

@@ -8,7 +8,7 @@ import { SqlInvitationService } from './services/sql-invitation-service';
 import { SqlTaskService } from './services/sql-task-service';
 import { StatusCalculator } from './services/status-calculator';
 import { SqlStatusCalculator } from './services/sql-status-calculator';
-import { RealTime } from './services/real-time';
+import { MessageBus, RealTime, SqlMessageBus } from './services/real-time';
 
 export type ServiceMap = {
   'current-user-id': string | undefined;
@@ -17,12 +17,16 @@ export type ServiceMap = {
   'user-service': UserService;
   'status-calculator': StatusCalculator;
   'real-time': RealTime;
+  'message-bus': MessageBus;
   pool: Pool;
+  'db-schema': string;
 };
 
 export const registry = new Registry<ServiceMap>();
 
 registry.for('current-user-id').use(() => undefined);
+
+registry.for('db-schema').use(() => process.env['DB_SCHEMA'] || '');
 
 registry
   .for('invitation-service')
@@ -30,7 +34,7 @@ registry
     (get) =>
       new SqlInvitationService(
         get('pool'),
-        process.env['DB_SCHEMA'] || '',
+        get('db-schema'),
         get('current-user-id'),
       ),
   );
@@ -41,8 +45,9 @@ registry
     (get) =>
       new SqlTaskService(
         get('pool'),
-        process.env['DB_SCHEMA'] || '',
+        get('db-schema'),
         get('status-calculator'),
+        get('message-bus'),
         get('current-user-id'),
       ),
   );
@@ -53,8 +58,9 @@ registry
     (get) =>
       new SqlUserService(
         get('pool'),
-        process.env['DB_SCHEMA'] || '',
+        get('db-schema'),
         get('status-calculator'),
+        get('message-bus'),
         get('current-user-id'),
       ),
   );
@@ -65,8 +71,8 @@ registry
     (get) =>
       new SqlStatusCalculator(
         get('pool'),
-        process.env['DB_SCHEMA'] || '',
-        get('real-time'),
+        get('db-schema'),
+        get('message-bus'),
       ),
   );
 
@@ -117,4 +123,11 @@ registry
         cluster: process.env['PUSHER_CLUSTER'] || '',
         useTLS: true,
       }),
+  );
+
+registry
+  .for('message-bus')
+  .withScope(singleton)
+  .use(
+    (get) => new SqlMessageBus(get('pool'), get('db-schema'), get('real-time')),
   );

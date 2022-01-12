@@ -12,6 +12,7 @@ import {
   TaskService,
   TaskUpdate,
 } from '../domain/v1/api.g';
+import { MessageBus } from './real-time';
 import { StatusCalculator } from './status-calculator';
 import { buildInClause, buildPage, Mapping, parsePage, using } from './utils';
 
@@ -22,32 +23,38 @@ export class SqlTaskService implements TaskService {
     private readonly pool: Pool,
     private readonly schema: string,
     private readonly statusCalculator: StatusCalculator,
+    private readonly messages: MessageBus,
     private readonly currentUserId?: string,
   ) {}
   async leaveTask({ taskId }: { taskId: string }): Promise<Task> {
     if (!this.currentUserId) throw new Error('Unauthorized');
 
-    await this.pool.query(
+    const { rowCount } = await this.pool.query(
       `UPDATE ${this.schema}.users
         SET status = 'idle', current_task_external_id = NULL
         WHERE external_id = $1`,
       [this.currentUserId],
     );
+    if (!rowCount) throw new Error('Not found');
+    this.messages.onUserStatusChanged([this.currentUserId]);
 
-    const { rowCount } = await this.pool.query<{ id: number }>(
+    const { rowCount: remainingParticipants } = await this.pool.query<{
+      id: number;
+    }>(
       `SELECT p.id FROM ${this.schema}.participants p
           JOIN ${this.schema}.users u ON p.user_external_id = u.external_id
           WHERE p.task_external_id = $1 AND u.status = 'flow'`,
       [taskId],
     );
 
-    if (rowCount === 0) {
+    if (remainingParticipants === 0) {
       await this.pool.query<{ flow_count: number }>(
         `UPDATE ${this.schema}.tasks
           SET status = '${afterInProgress}'
           WHERE external_id = $1`,
         [taskId],
       );
+      this.messages.onTaskStatusChanged([taskId]);
     }
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
@@ -62,15 +69,14 @@ export class SqlTaskService implements TaskService {
     // TODO: ensure that the current user is a flow participant and the task is in progress
 
     // Set task to done
-    const affected = (
-      await this.pool.query(
-        `UPDATE ${this.schema}.tasks
+    const { rowCount: affected } = await this.pool.query(
+      `UPDATE ${this.schema}.tasks
           SET status = '${afterInProgress}'
           WHERE status = 'in-progress' AND external_id = $1`,
-        [taskId],
-      )
-    ).rowCount;
+      [taskId],
+    );
     if (!affected) throw new Error('Not found');
+    this.messages.onTaskStatusChanged([taskId]);
 
     // Set all flow participants to idle
     const userIds = (
@@ -82,6 +88,7 @@ export class SqlTaskService implements TaskService {
         [taskId],
       )
     ).rows.map((r) => r.external_id);
+    this.messages.onUserStatusChanged(userIds);
 
     // recalculate status
     await this.statusCalculator.recalculateTaskStatusForUsers(userIds);
@@ -94,12 +101,14 @@ export class SqlTaskService implements TaskService {
 
     // TODO: ensure that the current user is a idle participant and the task is in progress
 
-    await this.pool.query(
+    const { rowCount } = await this.pool.query(
       `UPDATE ${this.schema}.users
         SET status = 'flow', current_task_external_id = $2
         WHERE external_id = $1`,
       [this.currentUserId, taskId],
     );
+    if (!rowCount) throw new Error('Not found');
+    this.messages.onUserStatusChanged([this.currentUserId]);
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,
@@ -113,24 +122,23 @@ export class SqlTaskService implements TaskService {
     // TODO: ensure that the current user is a idle participant
 
     // Set the task to 'in-progress'
-    const result1 = await this.pool.query(
+    const { rowCount: affected } = await this.pool.query(
       `UPDATE ${this.schema}.tasks
           SET status = 'in-progress'
           WHERE status = 'ready' AND external_id = $1
           RETURNING *`,
       [taskId],
     );
-
-    const affected = result1.rowCount;
-
     if (!affected) throw new Error('Not found');
+    this.messages.onTaskStatusChanged([taskId]);
 
-    const result2 = await this.pool.query(
+    await this.pool.query(
       `UPDATE ${this.schema}.users
         SET status = 'flow', current_task_external_id = $2
         WHERE external_id = $1`,
       [this.currentUserId, taskId],
     );
+    this.messages.onUserStatusChanged([this.currentUserId]);
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,
@@ -366,6 +374,8 @@ export class SqlTaskService implements TaskService {
     if (typeof status !== 'undefined') {
       UNSANITIZED_fields.push('status');
       values.push(status);
+
+      // TODO: dont allow this
 
       // TODO: get user IDs for all participants for this task
       // TODO: run await this.statusCalculator.recalculateTaskStatusForUsers(user IDs); after the update

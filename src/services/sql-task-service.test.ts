@@ -6,6 +6,7 @@ import {
   UserStatus,
 } from '../domain/v1/api.g';
 import { NullRealTime } from './null-real-time';
+import { NullMessageBus } from './real-time';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlTaskService } from './sql-task-service';
 import { TestUtility } from './sql-test-utility';
@@ -28,7 +29,7 @@ describe.skip('SqlTaskService', () => {
     statusCalculator = new SqlStatusCalculator(
       pool,
       schema,
-      new NullRealTime(),
+      new NullMessageBus(),
     );
     db = new TestUtility(pool, schema);
   });
@@ -55,6 +56,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -63,7 +65,13 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+      const service = new SqlTaskService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       // ACT
       const result = await service.createTask({
@@ -86,6 +94,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -94,7 +103,13 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+      const service = new SqlTaskService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       const a = await service.createTask({
         task: {
@@ -145,6 +160,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -153,7 +169,13 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+      const service = new SqlTaskService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       const a = await service.createTask({
         task: {
@@ -216,6 +238,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -224,7 +247,13 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+      const service = new SqlTaskService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       const a = await service.createTask({
         task: {
@@ -287,6 +316,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -295,7 +325,13 @@ describe.skip('SqlTaskService', () => {
           providerUserId: '2893674528967345',
         },
       });
-      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+      const service = new SqlTaskService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
       const task = await service.createTask({
         task: {
           name: 'task',
@@ -319,6 +355,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'me',
@@ -331,6 +368,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         me.id,
       ).updateUser({
         userId: me.id,
@@ -340,6 +378,7 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
       ).getOrCreateUser({
         user: {
           name: 'them',
@@ -352,13 +391,20 @@ describe.skip('SqlTaskService', () => {
         pool,
         schema,
         statusCalculator,
+        new NullMessageBus(),
         them.id,
       ).updateUser({
         userId: them.id,
         userUpdate: { status: 'idle' },
       });
 
-      const service = new SqlTaskService(pool, schema, statusCalculator, me.id);
+      const service = new SqlTaskService(
+        pool,
+        schema,
+        statusCalculator,
+        new NullMessageBus(),
+        me.id,
+      );
 
       const task = await service.createTask({
         task: {
