@@ -3,16 +3,16 @@ import React, { Fragment, useCallback, useState } from 'react';
 import { Disclosure, Menu, Transition } from '@headlessui/react';
 import { BellIcon, MenuIcon, XIcon } from '@heroicons/react/outline';
 import { useProfile } from '../profile-provider';
-import { Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { UserStatus } from '../../__generated__/globalTypes';
 import { useStatus } from '../components/use-status';
 import { Flow } from '../pages/flow';
 import { Avatar } from '../components/avatar';
 
 const navigation = [
-  { name: 'Dashboard', to: '/', current: true },
-  { name: 'Friends', to: '/friends', current: false },
-  { name: 'Tasks', to: '/tasks', current: false },
+  { name: 'Dashboard', to: '/' },
+  { name: 'Friends', to: '/friends' },
+  { name: 'Tasks', to: '/tasks' },
 ];
 const userNavigation = [
   { name: 'Your Profile', to: '/profile' },
@@ -58,19 +58,20 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                     <div className="hidden md:block">
                       <div className="ml-10 flex items-baseline space-x-4">
                         {navigation.map((item) => (
-                          <Link
+                          <NavLink
                             key={item.name}
                             to={item.to}
-                            className={classNames(
-                              item.current
-                                ? 'bg-gray-900 text-white'
-                                : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                              'px-3 py-2 rounded-md text-sm font-medium',
-                            )}
-                            aria-current={item.current ? 'page' : undefined}
+                            className={({ isActive }) =>
+                              classNames(
+                                isActive
+                                  ? 'bg-gray-900 text-white'
+                                  : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                                'px-3 py-2 rounded-md text-sm font-medium',
+                              )
+                            }
                           >
                             {item.name}
-                          </Link>
+                          </NavLink>
                         ))}
                       </div>
                     </div>
@@ -144,26 +145,26 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                           <Menu.Items className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none">
                             {userNavigation.map((item) => (
                               <Menu.Item key={item.name}>
-                                {({ active }) =>
-                                  item.to ? (
-                                    <Link
-                                      to={item.to}
-                                      className={classNames(
-                                        active ? 'bg-gray-100' : '',
+                                {item.to ? (
+                                  <NavLink
+                                    to={item.to}
+                                    className={({ isActive }) =>
+                                      classNames(
+                                        isActive ? 'bg-gray-100' : '',
                                         'block px-4 py-2 text-sm text-gray-700',
-                                      )}
-                                    >
-                                      {item.name}
-                                    </Link>
-                                  ) : (
-                                    <a
-                                      href={item.href}
-                                      className="block px-4 py-2 text-sm text-gray-700"
-                                    >
-                                      {item.name}
-                                    </a>
-                                  )
-                                }
+                                      )
+                                    }
+                                  >
+                                    {item.name}
+                                  </NavLink>
+                                ) : (
+                                  <a
+                                    href={item.href}
+                                    className="block px-4 py-2 text-sm text-gray-700"
+                                  >
+                                    {item.name}
+                                  </a>
+                                )}
                               </Menu.Item>
                             ))}
                           </Menu.Items>
@@ -191,19 +192,20 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
               <Disclosure.Panel className="md:hidden">
                 <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
                   {navigation.map((item) => (
-                    <Link
+                    <NavLink
                       key={item.name}
                       to={item.to}
-                      className={classNames(
-                        item.current
-                          ? 'bg-gray-900 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white',
-                        'block px-3 py-2 rounded-md text-base font-medium',
-                      )}
-                      aria-current={item.current ? 'page' : undefined}
+                      className={({ isActive }) =>
+                        classNames(
+                          isActive
+                            ? 'bg-gray-900 text-white'
+                            : 'text-gray-300 hover:bg-gray-700 hover:text-white',
+                          'block px-3 py-2 rounded-md text-base font-medium',
+                        )
+                      }
                     >
                       {item.name}
-                    </Link>
+                    </NavLink>
                   ))}
                 </div>
                 <div className="pt-4 pb-3 border-t border-gray-700">
@@ -236,13 +238,13 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
                   <div className="mt-3 px-2 space-y-1">
                     {userNavigation.map((item) =>
                       item.to ? (
-                        <Link
+                        <NavLink
                           key={item.name}
                           to={item.to}
                           className="block px-3 py-2 rounded-md text-base font-medium text-gray-400 hover:text-white hover:bg-gray-700"
                         >
                           {item.name}
-                        </Link>
+                        </NavLink>
                       ) : (
                         <Disclosure.Button
                           key={item.name}
