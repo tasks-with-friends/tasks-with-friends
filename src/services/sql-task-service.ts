@@ -36,7 +36,7 @@ export class SqlTaskService implements TaskService {
       [this.currentUserId],
     );
     if (!rowCount) throw new Error('Not found');
-    this.messages.onUserStatusChanged([this.currentUserId]);
+    await this.messages.onUserStatusChanged([this.currentUserId]);
 
     const { rowCount: remainingParticipants } = await this.pool.query<{
       id: number;
@@ -54,7 +54,7 @@ export class SqlTaskService implements TaskService {
           WHERE external_id = $1`,
         [taskId],
       );
-      this.messages.onTaskStatusChanged([taskId]);
+      await this.messages.onTaskStatusChanged([taskId]);
     }
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
@@ -76,7 +76,7 @@ export class SqlTaskService implements TaskService {
       [taskId],
     );
     if (!affected) throw new Error('Not found');
-    this.messages.onTaskStatusChanged([taskId]);
+    await this.messages.onTaskStatusChanged([taskId]);
 
     // Set all flow participants to idle
     const userIds = (
@@ -88,7 +88,7 @@ export class SqlTaskService implements TaskService {
         [taskId],
       )
     ).rows.map((r) => r.external_id);
-    this.messages.onUserStatusChanged(userIds);
+    await this.messages.onUserStatusChanged(userIds);
 
     // recalculate status
     await this.statusCalculator.recalculateTaskStatusForUsers(userIds);
@@ -108,7 +108,7 @@ export class SqlTaskService implements TaskService {
       [this.currentUserId, taskId],
     );
     if (!rowCount) throw new Error('Not found');
-    this.messages.onUserStatusChanged([this.currentUserId]);
+    await this.messages.onUserStatusChanged([this.currentUserId]);
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,
@@ -130,7 +130,7 @@ export class SqlTaskService implements TaskService {
       [taskId],
     );
     if (!affected) throw new Error('Not found');
-    this.messages.onTaskStatusChanged([taskId]);
+    await this.messages.onTaskStatusChanged([taskId]);
 
     await this.pool.query(
       `UPDATE ${this.schema}.users
@@ -138,7 +138,7 @@ export class SqlTaskService implements TaskService {
         WHERE external_id = $1`,
       [this.currentUserId, taskId],
     );
-    this.messages.onUserStatusChanged([this.currentUserId]);
+    await this.messages.onUserStatusChanged([this.currentUserId]);
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,
