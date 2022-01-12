@@ -130,6 +130,7 @@ const EditTaskGuts: React.VFC = () => {
       id: p.user.id,
       email: p.user.email,
       name: p.user.name,
+      status: p.user.status,
       avatarUrl: p.user.avatarUrl || undefined,
     })),
     ...rest,

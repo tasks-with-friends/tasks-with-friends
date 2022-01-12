@@ -1,6 +1,7 @@
 /* This example requires Tailwind CSS v2.0+ */
 import { gql, useMutation, useQuery } from '@apollo/client';
 import React, { useCallback, useState } from 'react';
+import { Avatar } from '../components/avatar';
 import { TaskList, TASK_LIST_ITEM } from '../components/task-list';
 
 import { Page } from '../templates/page';
@@ -34,6 +35,7 @@ export const GET_DASHBOARD = gql`
           id
           name
           email
+          status
           avatarUrl
         }
       }
@@ -115,10 +117,12 @@ const InvitationItem: React.VFC<{ invitation: Invitation }> = ({
     <li key={invitation.id} className="py-4">
       <div className="flex items-center space-x-4">
         <div className="flex-shrink-0">
-          <img
-            className="h-8 w-8 rounded-full"
-            src={invitation.from.avatarUrl || ''}
-            alt=""
+          <Avatar
+            key={invitation.from.id}
+            size="sm"
+            name={invitation.from.name}
+            avatarUrl={invitation.from.avatarUrl || undefined}
+            status={invitation.from.status}
           />
         </div>
         <div className="flex-1 min-w-0">
