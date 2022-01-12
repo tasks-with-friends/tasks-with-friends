@@ -67,8 +67,6 @@ export class SqlUserService implements UserService {
     const { userId } = params;
     if (userId !== this.currentUserId) throw new Error('Forbidden');
 
-    const originalUser = await this.getUser({ userId: params.userId });
-
     const UNSANITIZED_fields: string[] = [];
     const values: any[] = [];
     const { status, currentTaskId } = params.userUpdate;
@@ -95,18 +93,13 @@ export class SqlUserService implements UserService {
         [userId, ...values],
       )
     ).rows.map(using(dbUserToUser))[0];
+    await this.messages.onUserStatusChanged([userId]);
 
     if (!updatedUser) throw new Error('Not Found');
 
     await this.statusCalculator.recalculateTaskStatusForUsers([params.userId]);
 
-    const finalUser = await this.getUser({ userId: params.userId });
-
-    if (finalUser.status !== originalUser.status) {
-      this.messages.onUserStatusChanged([finalUser.id]);
-    }
-
-    return finalUser;
+    return this.getUser({ userId: params.userId });
   }
 
   private async getSortValue<T>(
