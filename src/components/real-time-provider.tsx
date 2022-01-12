@@ -12,6 +12,8 @@ import {
   RecacheUserStatusQuery,
   RecacheUserStatusQueryVariables,
 } from './__generated__/RecacheUserStatusQuery';
+import { GET_DASHBOARD } from '../pages/app';
+import { GetDashboardQuery } from '../pages/__generated__/GetDashboardQuery';
 
 Pusher.logToConsole = true;
 
@@ -54,6 +56,10 @@ export const RealTimeProvider: React.FC = ({ children }) => {
             },
           );
         }
+        client.query<GetDashboardQuery>({
+          query: GET_DASHBOARD,
+          fetchPolicy: 'network-only',
+        });
       });
 
       handleEvent(channel, 'user-status:v1', ({ userIds }) => {
