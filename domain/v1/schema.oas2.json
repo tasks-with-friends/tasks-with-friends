@@ -459,6 +459,44 @@
         }
       }
     },
+    "/users/:userId/refreshToken": {
+      "parameters": [
+        { "in": "path", "name": "userId", "type": "string", "required": true }
+      ],
+      "get": {
+        "operationId": "getUserRefreshToken",
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": {
+              "type": "object",
+              "properties": { "refreshToken": { "type": "string" } }
+            }
+          }
+        }
+      },
+      "put": {
+        "operationId": "setUserRefreshToken",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "refreshToken",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "success",
+            "schema": {
+              "type": "object",
+              "required": ["success"],
+              "properties": { "success": { "type": "boolean" } }
+            }
+          }
+        }
+      }
+    },
     "/users/:userId/friends": {
       "parameters": [
         { "in": "path", "name": "userId", "type": "string", "required": true }
@@ -702,7 +740,8 @@
         "email": { "type": "string" },
         "avatarUrl": { "type": "string" },
         "provider": { "type": "string" },
-        "providerUserId": { "type": "string" }
+        "providerUserId": { "type": "string" },
+        "refreshToken": { "type": "string" }
       }
     },
     "userUpdate": {

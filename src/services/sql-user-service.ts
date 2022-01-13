@@ -1,6 +1,8 @@
 import { Pool } from 'pg';
 import {
+  GetUserRefreshTokenResponse,
   NewUser,
+  SetUserRefreshTokenResponse,
   User,
   UserList,
   UserPage,
@@ -19,6 +21,35 @@ export class SqlUserService implements UserService {
     private readonly messages: MessageBus,
     private readonly currentUserId?: string,
   ) {}
+  async getUserRefreshToken(params: {
+    userId: string;
+  }): Promise<GetUserRefreshTokenResponse> {
+    if (params.userId !== this.currentUserId) throw new Error('Forbidden');
+
+    const { refresh_token } = (
+      await this.pool.query<{ refresh_token: string | null }>(
+        `SELECT refresh_token FROM ${this.schema}.users WHERE external_id = $1`,
+        [params.userId],
+      )
+    ).rows[0];
+
+    return { refreshToken: refresh_token || undefined };
+  }
+  async setUserRefreshToken(params: {
+    userId: string;
+    refreshToken: string;
+  }): Promise<SetUserRefreshTokenResponse> {
+    if (params.userId !== this.currentUserId) throw new Error('Forbidden');
+
+    const { rowCount } = await this.pool.query<{
+      refresh_token: string | null;
+    }>(
+      `UPDATE ${this.schema}.users SET refresh_token = $2 WHERE external_id = $1 RETURNING id`,
+      [params.userId, params.refreshToken],
+    );
+
+    return { success: !!rowCount };
+  }
 
   async getUsers(params: { userIds: string[] }): Promise<UserList> {
     const items = (
@@ -43,14 +74,25 @@ export class SqlUserService implements UserService {
       )
     ).rows.map(using(dbUserToUser))[0];
 
-    if (existingUser) return existingUser;
+    if (existingUser) {
+      if (params.user.refreshToken) {
+        await this.pool.query<{
+          refresh_token: string | null;
+        }>(
+          `UPDATE ${this.schema}.users SET refresh_token = $2 WHERE external_id = $1 RETURNING id`,
+          [existingUser.id, params.user.refreshToken],
+        );
+      }
+      return existingUser;
+    }
 
-    const { name, email, avatarUrl, provider, providerUserId } = params.user;
+    const { name, email, avatarUrl, provider, providerUserId, refreshToken } =
+      params.user;
     const newUser = (
       await this.pool.query<DbUser>(
-        `INSERT INTO ${this.schema}.users (name, email, avatar_url, provider, provider_user_id, status)
-      VALUES ($1, $2, $3, $4, $5, 'away') RETURNING *`,
-        [name, email, avatarUrl, provider, providerUserId],
+        `INSERT INTO ${this.schema}.users (name, email, avatar_url, provider, provider_user_id, refreshToken, status)
+      VALUES ($1, $2, $3, $4, $5, $6, 'away') RETURNING *`,
+        [name, email, avatarUrl, provider, providerUserId, refreshToken],
       )
     ).rows.map(using(dbUserToUser))[0];
     return newUser;
