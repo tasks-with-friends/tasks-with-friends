@@ -203,6 +203,7 @@ type DbUser = {
   provider_user_id: string;
   status: string;
   current_task_external_id: string | null;
+  refresh_token: string | null;
 };
 
 const dbUserToUser: Mapping<DbUser, User> = {
