@@ -17,6 +17,7 @@ const ADD_TASK = gql`
     $description: String
     $durationMinutes: Int!
     $groupSize: Int!
+    $userIds: [ID!]
   ) {
     addTask(
       input: {
@@ -24,6 +25,7 @@ const ADD_TASK = gql`
         description: $description
         durationMinutes: $durationMinutes
         groupSize: $groupSize
+        userIds: $userIds
       }
     ) {
       task {
@@ -48,6 +50,8 @@ const NewTaskGuts: React.VFC = () => {
   // TODO: cache result
   const handleSubmit: TaskFormSubmitHandler = useCallback(
     ({ value }) => {
+      const { participants, ...rest } = value;
+
       addTask({
         refetchQueries: [
           {
@@ -55,7 +59,7 @@ const NewTaskGuts: React.VFC = () => {
           },
         ],
         awaitRefetchQueries: true,
-        variables: value,
+        variables: { ...rest, userIds: participants.map((p) => p.id) },
       }).then(() => navigate('/tasks'));
     },
     [addTask, navigate],

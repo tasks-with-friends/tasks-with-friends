@@ -227,7 +227,9 @@ input AddTaskInput {
   The estimated amount of time that this task will take. This helps users prioritize their tasks.
   """
   durationMinutes: Int!
-
+  """
+  Users to add to the task as participants
+  """
   userIds: [ID!]
 }
 
