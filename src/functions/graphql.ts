@@ -6,10 +6,9 @@ import type {
 import { graphql, buildSchema } from 'graphql';
 import { root } from '../graphql/server';
 import { source } from '../domain/v1/graph.g';
-import { Profile } from '../types';
 import { registry } from '../registry';
 
-import { verify } from 'jsonwebtoken';
+import { authorize } from '../google-oauth';
 
 type Request = {
   query: string;
@@ -18,10 +17,8 @@ type Request = {
 };
 
 const handler: Handler = async (event, context) => {
-  const { profile, notAuthorized } = authorize(event);
+  const { profile, cookie, notAuthorized } = await authorize(event);
   if (notAuthorized) return notAuthorized;
-
-  console.log({ 'current-user-id': registry.get('current-user-id'), profile });
 
   const { methodNotAllowed } = checkMethod(event, ['POST', 'HEAD', 'OPTIONS']);
   if (methodNotAllowed) return methodNotAllowed;
@@ -48,11 +45,15 @@ const handler: Handler = async (event, context) => {
     },
   });
 
+  const headers: Record<string, string | number | boolean> = {
+    'content-type': 'application/json',
+  };
+
+  if (cookie) headers['set-cookie'] = cookie;
+
   return {
     statusCode: 200,
-    headers: {
-      'content-type': 'application/json',
-    },
+    headers,
     body: JSON.stringify(response),
   };
 };
@@ -89,47 +90,4 @@ function checkContentType(
       },
     },
   };
-}
-
-function authorize(event: HandlerEvent): {
-  notAuthorized?: HandlerResponse;
-  profile?: Profile;
-} {
-  const cookie = event.headers.cookie;
-
-  const notAuthorized: HandlerResponse = {
-    statusCode: 401,
-  };
-
-  if (!cookie) return { notAuthorized };
-
-  const token = cookie
-    .split(';')
-    .map((c) => c.trim().split('='))
-    .find(([key]) => key === 'token')?.[1];
-
-  if (!token || !process.env.SESSION_COOKIE_SECRET) return { notAuthorized };
-
-  try {
-    const profile = verify(token, process.env.SESSION_COOKIE_SECRET);
-
-    if (typeof profile === 'string') return { notAuthorized };
-
-    if (!profile.sub) return { notAuthorized };
-    if (!profile.name) return { notAuthorized };
-    if (!profile.email) return { notAuthorized };
-
-    registry.for('current-user-id').use(() => profile.sub);
-
-    return {
-      profile: {
-        id: profile.sub,
-        name: profile.name,
-        email: profile.email,
-        avatarUrl: profile.avatarUrl,
-      },
-    };
-  } catch {
-    return { notAuthorized };
-  }
 }

@@ -1,20 +1,19 @@
-import { post } from '../net';
 import { NetlifyRouter } from '../netlify-router';
 import { registry } from '../registry';
-import jwt from 'jsonwebtoken';
+import {
+  exchangeAuthCodeForToken,
+  getSignedLogoutSession,
+  getSignedSession,
+} from '../google-oauth';
 
 const router = new NetlifyRouter('/auth');
 
+// TODO: clear user's refresh token
 router.get('/logout', async (event) => ({
   statusCode: 302,
   headers: {
     location: '/?logout=success',
-    'set-cookie': `token=${jwt.sign(
-      {
-        iss: process.env.WEBAPP_DOMAIN,
-      },
-      process.env.SESSION_COOKIE_SECRET || '',
-    )}; Max-Age=3000; path=/`,
+    'set-cookie': getSignedLogoutSession().cookie,
   },
 }));
 
@@ -31,64 +30,31 @@ router.get('/google', async () => ({
 
 router.get('/google/callback', async (event) => {
   try {
-    // 1) read profile
-    const res =
-      (await post({
-        url: 'https://www.googleapis.com/oauth2/v4/token',
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
-        },
-        data: `code=${encodeURIComponent(
-          event?.queryStringParameters?.code || '',
-        )}&redirect_uri=${encodeURIComponent(
-          `${process.env.WEBAPP_DOMAIN}/auth/google/callback`,
-        )}&client_id=${encodeURIComponent(
-          process.env.GOOGLE_OAUTH_CLIENT_ID || '',
-        )}&client_secret=${encodeURIComponent(
-          process.env.GOOGLE_OAUTH_CLIENT_SECRET || '',
-        )}&scope=&grant_type=authorization_code`,
-      })) || '';
-    const profile = jwt.decode(JSON.parse(res).id_token);
-    if (!profile || typeof profile === 'string') {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ message: 'Unable to parse id_token' }),
-      };
-    }
+    // 1) exchange auth code for token
+    const authCode = event?.queryStringParameters?.code || '';
+    const { idToken, refreshToken } = await exchangeAuthCodeForToken(authCode);
 
     // 2) get or set user
     const user = await registry.get('user-service').getOrCreateUser({
       user: {
-        name: profile.name,
-        email: profile.email || '',
+        name: idToken.name,
+        email: idToken.email || '',
         provider: 'google',
-        providerUserId: profile.sub || '',
-        avatarUrl: profile.picture,
+        providerUserId: idToken.sub || '',
+        avatarUrl: idToken.picture,
+        refreshToken,
       },
     });
 
-    const token = jwt.sign(
-      {
-        iss: process.env.WEBAPP_DOMAIN,
-        sub: user.id,
-        name: user.name,
-        email: user.email,
-        avatarUrl: user.avatarUrl,
-        provider: user.provider,
-        providerUserId: user.providerUserId,
-        iat: profile.iat,
-        exp: profile.exp,
-      },
-      process.env.SESSION_COOKIE_SECRET || '',
-    );
-
     // 3) on success, set session cookie
+    const { cookie } = getSignedSession(user, idToken.iat, idToken.exp);
+
     // 4) redirect to home page
     return {
       statusCode: 302,
       headers: {
         location: '/?login=success',
-        'set-cookie': `token=${token}; Max-Age=3000; path=/`,
+        'set-cookie': cookie,
       },
     };
   } catch (err) {
