@@ -71,8 +71,6 @@ export function useStatus(): {
             }
           : null;
 
-      console.log({ optimisticCurrentTask });
-
       if (data?.me?.status !== newStatus) {
         setUserStatus({
           variables: { input: { status: newStatus } },
