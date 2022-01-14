@@ -223,8 +223,6 @@ export const TaskForm: React.VFC<TaskFormPropTypes> = ({
       if (addUserIds.length) diffs.addUserIds = addUserIds;
       if (removeUserIds?.length) diffs.removeUserIds = removeUserIds;
 
-      console.log({ data, diffs });
-
       onSubmit({ value: data, diffs });
 
       e.preventDefault();

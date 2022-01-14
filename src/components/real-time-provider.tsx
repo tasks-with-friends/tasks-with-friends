@@ -15,8 +15,6 @@ import {
 import { GET_DASHBOARD } from '../pages/app';
 import { GetDashboardQuery } from '../pages/__generated__/GetDashboardQuery';
 
-Pusher.logToConsole = true;
-
 const RECACHE_TASK_STATUS = gql`
   query RecacheTaskStatusQuery($taskId: ID!) {
     task(id: $taskId) {
@@ -91,9 +89,5 @@ function handleEvent<EventName extends keyof EventMap>(
   eventName: EventName,
   callback: (data: EventMap[EventName]) => void,
 ) {
-  // channel.bind(eventName, callback);
-  channel.bind(eventName, (data) => {
-    console.log(eventName, data);
-    callback(data);
-  });
+  channel.bind(eventName, callback);
 }

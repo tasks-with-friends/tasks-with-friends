@@ -11,8 +11,6 @@ export function participantDto(
 ): schema.Participant {
   const { userId, taskId, response, ...rest } = participant;
 
-  console.log({ userId, taskId, response, rest });
-
   return {
     ...participant,
     user: resolveUserById(userId),

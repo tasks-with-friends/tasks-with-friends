@@ -29,7 +29,6 @@ const handler: Handler = async (event, context) => {
   const { query, operationName, variables } = JSON.parse(
     event.body || '{}',
   ) as Request;
-  console.log({ query });
 
   const schema = buildSchema(source);
 

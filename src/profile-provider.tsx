@@ -25,7 +25,6 @@ export const ProfileProvider: React.FC = ({ children }) => {
             ?.split('.')?.[1] || '{}',
         ),
       );
-      console.log(token);
       if (token.sub && token.name && token.email) {
         return {
           id: token.sub,
