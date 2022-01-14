@@ -30,6 +30,8 @@ const handler: Handler = async (event, context) => {
     event.body || '{}',
   ) as Request;
 
+  console.log('GraphQL:', operationName);
+
   const schema = buildSchema(source);
 
   const response = await graphql({
