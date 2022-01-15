@@ -9,14 +9,12 @@ import {
 } from '../../__generated__/globalTypes';
 import { useProfile } from '../profile-provider';
 import { Avatar } from './avatar';
+import { ModalPropTypes } from './types';
+import { useJoinTask } from './use-join-task';
 import {
   ClearResponseMutation,
   ClearResponseMutationVariables,
 } from './__generated__/ClearResponseMutation';
-import {
-  JoinTaskMutation,
-  JoinTaskMutationVariables,
-} from './__generated__/JoinTaskMutation';
 import {
   SetResponseMutation,
   SetResponseMutationVariables,
@@ -76,47 +74,25 @@ const START_TASK = gql`
   }
 `;
 
-const JOIN_TASK = gql`
-  mutation JoinTaskMutation($input: JoinTaskInput!) {
-    joinTask(input: $input) {
-      me {
-        id
-        status
-        currentTask {
-          id
-          status
-        }
-      }
-      task {
-        id
-        status
-      }
-    }
-  }
-`;
-
 export interface TaskModalPropTypes {
   task: TaskListItem;
-  isOpen: boolean;
-  setIsOpen: (value: boolean) => void;
 }
 
 export const useTaskModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const open = useCallback(() => setIsOpen(true), []);
 
-  const TaskModal: React.VFC<Omit<TaskModalPropTypes, 'isOpen' | 'setIsOpen'>> =
-    useCallback(
-      (props: Omit<TaskModalPropTypes, 'isOpen' | 'setIsOpen'>) => (
-        <TaskModalBase isOpen={isOpen} setIsOpen={setIsOpen} {...props} />
-      ),
-      [isOpen],
-    );
+  const TaskModal: React.VFC<TaskModalPropTypes> = useCallback(
+    (props: TaskModalPropTypes) => (
+      <TaskModalBase isOpen={isOpen} setIsOpen={setIsOpen} {...props} />
+    ),
+    [isOpen],
+  );
 
   return { TaskModal, open };
 };
 
-const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
+const TaskModalBase: React.VFC<TaskModalPropTypes & ModalPropTypes> = ({
   task,
   isOpen,
   setIsOpen,
@@ -159,39 +135,7 @@ const TaskModalBase: React.VFC<TaskModalPropTypes> = ({
     });
   }, [task.id, startTask, profile.id]);
 
-  const [joinTask] = useMutation<JoinTaskMutation, JoinTaskMutationVariables>(
-    JOIN_TASK,
-  );
-
-  const handleJoinTask = useCallback(() => {
-    joinTask({
-      variables: {
-        input: {
-          taskId: task.id,
-        },
-      },
-      optimisticResponse: {
-        joinTask: {
-          __typename: 'JoinTaskPayload',
-          me: {
-            __typename: 'User',
-            id: profile.id,
-            status: UserStatus.FLOW,
-            currentTask: {
-              __typename: 'Task',
-              id: task.id,
-              status: TaskStatus.IN_PROGRESS,
-            },
-          },
-          task: {
-            __typename: 'Task',
-            id: task.id,
-            status: TaskStatus.IN_PROGRESS,
-          },
-        },
-      },
-    });
-  }, [task.id, joinTask, profile.id]);
+  const [handleJoinTask] = useJoinTask(task.id);
 
   const [setResponse, { loading: setting }] = useMutation<
     SetResponseMutation,

@@ -17,6 +17,7 @@ import {
   WriteUserStatus,
   WriteUserStatusVariables,
 } from './__generated__/WriteUserStatus';
+import { useTaskAlertModal } from './task-alert-modal';
 
 const WRITE_TASK_STATUS = gql`
   query WriteTaskStatus($taskId: ID!) {
@@ -39,6 +40,7 @@ const WRITE_USER_STATUS = gql`
 export const RealTimeProvider: React.FC = ({ children }) => {
   const profile = useProfileOrNull();
   const client = useApolloClient();
+  const { open, Modal } = useTaskAlertModal();
 
   useEffect(() => {
     if (profile) {
@@ -53,17 +55,21 @@ export const RealTimeProvider: React.FC = ({ children }) => {
         'multi-payload:v1',
         ({ taskStatus = {}, userStatus = {} }) => {
           for (const taskId of Object.keys(taskStatus)) {
+            const status = mapTaskStatus(taskStatus[taskId]);
             client.writeQuery<WriteTaskStatus, WriteTaskStatusVariables>({
               query: WRITE_TASK_STATUS,
               data: {
                 task: {
                   __typename: 'Task',
                   id: taskId,
-                  status: mapTaskStatus(taskStatus[taskId]),
+                  status,
                 },
               },
               variables: { taskId },
             });
+            if (status === TaskStatus.IN_PROGRESS) {
+              open(taskId);
+            }
           }
 
           for (const userId of Object.keys(userStatus)) {
@@ -92,34 +98,6 @@ export const RealTimeProvider: React.FC = ({ children }) => {
         },
       );
 
-      // handleEvent(channel, 'task-status:v1', ({ taskIds }) => {
-      //   for (const taskId of taskIds) {
-      //     client.query<RecacheTaskStatusQuery, RecacheTaskStatusQueryVariables>(
-      //       {
-      //         query: RECACHE_TASK_STATUS,
-      //         fetchPolicy: 'network-only',
-      //         variables: { taskId },
-      //       },
-      //     );
-      //   }
-      //   client.query<GetDashboardQuery>({
-      //     query: GET_DASHBOARD,
-      //     fetchPolicy: 'network-only',
-      //   });
-      // });
-
-      // handleEvent(channel, 'user-status:v1', ({ userIds }) => {
-      //   for (const userId of userIds) {
-      //     client.query<RecacheUserStatusQuery, RecacheUserStatusQueryVariables>(
-      //       {
-      //         query: RECACHE_USER_STATUS,
-      //         fetchPolicy: 'network-only',
-      //         variables: { userId },
-      //       },
-      //     );
-      //   }
-      // });
-
       return () => {
         channel.unsubscribe();
       };
@@ -129,7 +107,12 @@ export const RealTimeProvider: React.FC = ({ children }) => {
       };
     }
   }, [profile, client]);
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <Modal />
+    </>
+  );
 };
 
 function handleEvent<EventName extends keyof EventMap>(
