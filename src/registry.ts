@@ -15,7 +15,9 @@ import { SqlInvitationService } from './services/sql-invitation-service';
 import { SqlTaskService } from './services/sql-task-service';
 import { StatusCalculator } from './services/status-calculator';
 import { SqlStatusCalculator } from './services/sql-status-calculator';
-import { MessageBus, RealTime, SqlMessageBus } from './services/real-time';
+import { RealTime } from './services/real-time';
+import { MessageBus } from './services/message-bus';
+import { SqlMessageBus } from './services/sql-message-bus';
 
 export type ServiceMap = {
   'current-user-id': string | undefined;

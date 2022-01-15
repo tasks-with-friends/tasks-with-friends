@@ -12,7 +12,7 @@ import {
   TaskService,
   TaskUpdate,
 } from '../domain/v1/api.g';
-import { MessageBus } from './real-time';
+import { MessageBus } from './message-bus';
 import { StatusCalculator } from './status-calculator';
 import { buildInClause, buildPage, Mapping, parsePage, using } from './utils';
 
@@ -36,7 +36,7 @@ export class SqlTaskService implements TaskService {
       [this.currentUserId],
     );
     if (!rowCount) throw new Error('Not found');
-    await this.messages.onUserStatusChanged([this.currentUserId]);
+    this.messages.onUserStatusChanged({ [this.currentUserId]: 'idle' });
 
     const { rowCount: remainingParticipants } = await this.pool.query<{
       id: number;
@@ -54,7 +54,7 @@ export class SqlTaskService implements TaskService {
           WHERE external_id = $1`,
         [taskId],
       );
-      await this.messages.onTaskStatusChanged([taskId]);
+      this.messages.onTaskStatusChanged({ [taskId]: afterInProgress });
     }
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
@@ -76,7 +76,7 @@ export class SqlTaskService implements TaskService {
       [taskId],
     );
     if (!affected) throw new Error('Not found');
-    await this.messages.onTaskStatusChanged([taskId]);
+    this.messages.onTaskStatusChanged({ [taskId]: afterInProgress });
 
     // Set all flow participants to idle
     const userIds = (
@@ -88,7 +88,9 @@ export class SqlTaskService implements TaskService {
         [taskId],
       )
     ).rows.map((r) => r.external_id);
-    await this.messages.onUserStatusChanged(userIds);
+    const data: Record<string, 'idle'> = {};
+    userIds.forEach((id) => (data[id] = 'idle'));
+    this.messages.onUserStatusChanged(data);
 
     // recalculate status
     await this.statusCalculator.recalculateTaskStatusForUsers(userIds);
@@ -108,7 +110,7 @@ export class SqlTaskService implements TaskService {
       [this.currentUserId, taskId],
     );
     if (!rowCount) throw new Error('Not found');
-    await this.messages.onUserStatusChanged([this.currentUserId]);
+    this.messages.onUserStatusChanged({ [this.currentUserId]: 'flow' });
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,
@@ -130,7 +132,7 @@ export class SqlTaskService implements TaskService {
       [taskId],
     );
     if (!affected) throw new Error('Not found');
-    await this.messages.onTaskStatusChanged([taskId]);
+    this.messages.onTaskStatusChanged({ [taskId]: 'in-progress' });
 
     await this.pool.query(
       `UPDATE ${this.schema}.users
@@ -138,7 +140,7 @@ export class SqlTaskService implements TaskService {
         WHERE external_id = $1`,
       [this.currentUserId, taskId],
     );
-    await this.messages.onUserStatusChanged([this.currentUserId]);
+    this.messages.onUserStatusChanged({ [this.currentUserId]: 'flow' });
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,

@@ -9,8 +9,7 @@ import {
   User,
   UserStatus,
 } from '../domain/v1/api.g';
-import { NullRealTime } from './null-real-time';
-import { NullMessageBus } from './real-time';
+import { NullMessageBus } from './null-message-bus';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlTaskService } from './sql-task-service';
 import { SqlUserService } from './sql-user-service';
