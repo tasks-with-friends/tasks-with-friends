@@ -31,6 +31,9 @@ export const TASK_LIST_ITEM = gql`
           email
           status
           avatarUrl
+          currentTask {
+            id
+          }
         }
       }
     }

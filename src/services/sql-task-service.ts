@@ -37,6 +37,7 @@ export class SqlTaskService implements TaskService {
     );
     if (!rowCount) throw new Error('Not found');
     this.messages.onUserStatusChanged({ [this.currentUserId]: 'idle' });
+    this.messages.onUserCurrentTaskChanged({ [this.currentUserId]: null });
 
     const { rowCount: remainingParticipants } = await this.pool.query<{
       id: number;
@@ -88,9 +89,14 @@ export class SqlTaskService implements TaskService {
         [taskId],
       )
     ).rows.map((r) => r.external_id);
-    const data: Record<string, 'idle'> = {};
-    userIds.forEach((id) => (data[id] = 'idle'));
-    this.messages.onUserStatusChanged(data);
+    const statusByUser: Record<string, 'idle'> = {};
+    const currentTaskByUser: Record<string, null> = {};
+    userIds.forEach((id) => {
+      statusByUser[id] = 'idle';
+      currentTaskByUser[id] = null;
+    });
+    this.messages.onUserStatusChanged(statusByUser);
+    this.messages.onUserCurrentTaskChanged(currentTaskByUser);
 
     // recalculate status
     await this.statusCalculator.recalculateTaskStatusForUsers(userIds);
@@ -111,6 +117,7 @@ export class SqlTaskService implements TaskService {
     );
     if (!rowCount) throw new Error('Not found');
     this.messages.onUserStatusChanged({ [this.currentUserId]: 'flow' });
+    this.messages.onUserCurrentTaskChanged({ [this.currentUserId]: taskId });
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,
@@ -141,6 +148,7 @@ export class SqlTaskService implements TaskService {
       [this.currentUserId, taskId],
     );
     this.messages.onUserStatusChanged({ [this.currentUserId]: 'flow' });
+    this.messages.onUserCurrentTaskChanged({ [this.currentUserId]: taskId });
 
     await this.statusCalculator.recalculateTaskStatusForUsers([
       this.currentUserId,

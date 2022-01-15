@@ -18,6 +18,10 @@ import {
   WriteUserStatusVariables,
 } from './__generated__/WriteUserStatus';
 import { useTaskAlertModal } from './task-alert-modal';
+import {
+  WriteUserCurrentTask,
+  WriteUserCurrentTaskVariables,
+} from './__generated__/WriteUserCurrentTask';
 
 const WRITE_TASK_STATUS = gql`
   query WriteTaskStatus($taskId: ID!) {
@@ -33,6 +37,17 @@ const WRITE_USER_STATUS = gql`
     user(id: $userId) {
       id
       status
+    }
+  }
+`;
+
+const WRITE_USER_CURRENT_TASK = gql`
+  query WriteUserCurrentTask($userId: ID!) {
+    user(id: $userId) {
+      id
+      currentTask {
+        id
+      }
     }
   }
 `;
@@ -53,7 +68,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
       handleEvent(
         channel,
         'multi-payload:v1',
-        ({ taskStatus = {}, userStatus = {} }) => {
+        ({ taskStatus = {}, userStatus = {}, userCurrentTask = {} }) => {
           for (const taskId of Object.keys(taskStatus)) {
             const status = mapTaskStatus(taskStatus[taskId]);
             client.writeQuery<WriteTaskStatus, WriteTaskStatusVariables>({
@@ -86,6 +101,30 @@ export const RealTimeProvider: React.FC = ({ children }) => {
             });
           }
 
+          for (const userId of Object.keys(userCurrentTask)) {
+            const currentTaskId = userCurrentTask[userId];
+            client.writeQuery<
+              WriteUserCurrentTask,
+              WriteUserCurrentTaskVariables
+            >({
+              query: WRITE_USER_CURRENT_TASK,
+              data: {
+                user: {
+                  __typename: 'User',
+                  id: userId,
+                  currentTask:
+                    typeof currentTaskId === 'string'
+                      ? {
+                          __typename: 'Task' as const,
+                          id: currentTaskId,
+                        }
+                      : null,
+                },
+              },
+              variables: { userId },
+            });
+          }
+
           if (
             Object.keys(taskStatus).length &&
             userStatus[profile?.id || ''] !== 'flow'
@@ -106,7 +145,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
         // empty
       };
     }
-  }, [profile, client]);
+  }, [profile, client, open]);
   return (
     <>
       {children}

@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { TaskStatus, UserStatus } from '../domain/v1/api.g';
+import { Task, TaskStatus, UserStatus } from '../domain/v1/api.g';
 import { MessageBus } from './message-bus';
 import { EventMap, RealTime } from './real-time';
 
@@ -9,8 +9,10 @@ export class SqlMessageBus implements MessageBus {
     private readonly schema: string,
     private readonly realTime: RealTime,
   ) {}
+
   private readonly taskStatus: Map<string, TaskStatus> = new Map();
   private readonly userStatus: Map<string, UserStatus> = new Map();
+  private readonly userCurrentTask: Map<string, Task['id'] | null> = new Map();
 
   onTaskStatusChanged(statusByTaskId: Record<string, TaskStatus>) {
     for (const taskId of Object.keys(statusByTaskId)) {
@@ -21,6 +23,14 @@ export class SqlMessageBus implements MessageBus {
   onUserStatusChanged(statusByUserId: Record<string, UserStatus>) {
     for (const userId of Object.keys(statusByUserId)) {
       this.userStatus.set(userId, statusByUserId[userId]);
+    }
+  }
+
+  onUserCurrentTaskChanged(
+    taskByUserId: Record<string, Task['id'] | null>,
+  ): void {
+    for (const userId of Object.keys(taskByUserId)) {
+      this.userCurrentTask.set(userId, taskByUserId[userId]);
     }
   }
 
@@ -72,15 +82,25 @@ export class SqlMessageBus implements MessageBus {
     return statusByTaskByRecipient;
   }
 
-  private async computeUserMessages(): Promise<
-    Map<string, Map<string, UserStatus>>
-  > {
+  private async computeUserMessages(): Promise<{
+    status: Map<string, Map<string, UserStatus>>;
+    currentTask: Map<string, Map<string, Task['id'] | null>>;
+  }> {
     const statusByUserByRecipient: Map<
       string,
       Map<string, UserStatus>
     > = new Map();
+    const currentTaskByUserByRecipient: Map<
+      string,
+      Map<string, Task['id'] | null>
+    > = new Map();
     const userIds = Array.from(this.userStatus.keys());
-    if (!userIds.length) return statusByUserByRecipient;
+    if (!userIds.length) {
+      return {
+        status: statusByUserByRecipient,
+        currentTask: currentTaskByUserByRecipient,
+      };
+    }
 
     const userFriends = (
       await this.pool.query<{
@@ -111,17 +131,26 @@ export class SqlMessageBus implements MessageBus {
     for (const recipient of Object.keys(usersByRecipient)) {
       const userIdsForRecipient = usersByRecipient[recipient];
       if (userIdsForRecipient.size) {
-        const x: Map<string, UserStatus> = new Map();
+        const statusByUser: Map<string, UserStatus> = new Map();
+        const currentTaskByUser: Map<string, Task['id'] | null> = new Map();
         for (const userId of userIdsForRecipient) {
           const status = this.userStatus.get(userId);
+          const currentTask = this.userCurrentTask.get(userId);
 
-          if (status) x.set(userId, status);
+          if (status) statusByUser.set(userId, status);
+          if (typeof currentTask !== 'undefined') {
+            currentTaskByUser.set(userId, currentTask);
+          }
         }
-        statusByUserByRecipient.set(recipient, x);
+        statusByUserByRecipient.set(recipient, statusByUser);
+        currentTaskByUserByRecipient.set(recipient, currentTaskByUser);
       }
     }
 
-    return statusByUserByRecipient;
+    return {
+      status: statusByUserByRecipient,
+      currentTask: currentTaskByUserByRecipient,
+    };
   }
 
   async drain(): Promise<void> {
@@ -132,27 +161,30 @@ export class SqlMessageBus implements MessageBus {
 
     const recipients: Set<string> = new Set([
       ...taskMessages.keys(),
-      ...userMessages.keys(),
+      ...userMessages.status.keys(),
+      ...userMessages.currentTask.keys(),
     ]);
+
+    console.log({ recipients, userMessages });
 
     for (const recipient of recipients) {
       const message: EventMap['multi-payload:v1'] = {};
 
       const t = taskMessages.get(recipient);
-      if (t) {
-        message.taskStatus = toRecord(t);
-      }
+      if (t) message.taskStatus = toRecord(t);
 
-      const u = userMessages.get(recipient);
-      if (u) {
-        message.userStatus = toRecord(u);
-      }
+      const u = userMessages.status.get(recipient);
+      if (u) message.userStatus = toRecord(u);
+
+      const c = userMessages.currentTask.get(recipient);
+      if (c) message.userCurrentTask = toRecord(c);
 
       await this.realTime.trigger(recipient, 'multi-payload:v1', message);
     }
 
     this.taskStatus.clear();
     this.userStatus.clear();
+    this.userCurrentTask.clear();
   }
 }
 

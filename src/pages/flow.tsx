@@ -127,13 +127,15 @@ const TaskDisplay: React.VFC<{
     <div className={`${className || ''} flex flex-col items-center`}>
       <ul className="flex flex-row flex-wrap justify-center">
         {currentTask.participants.nodes.map((participant) => (
-          <li key={participant.id}>
+          <li key={participant.id} className="mx-2">
             <Avatar
               key={participant.user.id}
               size="2xl"
               name={participant.user.name}
               avatarUrl={participant.user.avatarUrl || undefined}
-              status={participant.user.status}
+              transparent={
+                participant.user?.currentTask?.id !== currentTask?.id
+              }
             />
             {/* <img
               className="inline-block h-14 w-14 rounded-full m-3 border border-gray-300/75 drop-shadow-xl"
