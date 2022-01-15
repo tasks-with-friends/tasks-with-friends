@@ -150,6 +150,9 @@ export class SqlMessageBus implements MessageBus {
 
       await this.realTime.trigger(recipient, 'multi-payload:v1', message);
     }
+
+    this.taskStatus.clear();
+    this.userStatus.clear();
   }
 }
 
