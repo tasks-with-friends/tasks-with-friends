@@ -7,6 +7,9 @@ export class NullMessageBus implements MessageBus {
   onUserStatusChanged() {
     return;
   }
+  onUserCurrentTaskChanged(): void {
+    return;
+  }
 
   drain(): Promise<void> {
     return Promise.resolve();

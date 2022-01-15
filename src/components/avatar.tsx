@@ -6,6 +6,7 @@ export interface AvatarPropTypes {
   avatarUrl?: string;
   status?: UserStatus;
   size: AvatarSize;
+  transparent?: boolean;
 }
 
 export type AvatarSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
@@ -15,11 +16,14 @@ export const Avatar: React.VFC<AvatarPropTypes> = ({
   avatarUrl,
   status,
   size,
+  transparent,
 }) => {
   return (
     <span className="inline-block relative">
       <img
-        className={`${getAvatarSize(size)} rounded-full`}
+        className={`${getAvatarSize(size)} rounded-full${
+          transparent ? ' opacity-50 grayscale' : ''
+        }`}
         src={avatarUrl}
         alt={name}
       />

@@ -1,5 +1,5 @@
 import { Response } from 'node-fetch';
-import { TaskStatus, UserStatus } from '../domain/v1/api.g';
+import { Task, TaskStatus, UserStatus } from '../domain/v1/api.g';
 
 export interface RealTime {
   trigger<EventName extends keyof EventMap>(
@@ -30,5 +30,6 @@ export type EventMap = {
   'multi-payload:v1': {
     userStatus?: Record<string, UserStatus>;
     taskStatus?: Record<string, TaskStatus>;
+    userCurrentTask?: Record<string, Task['id'] | null>;
   };
 };

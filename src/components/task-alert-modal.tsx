@@ -5,6 +5,8 @@ import { SpeakerphoneIcon } from '@heroicons/react/outline';
 import { ModalPropTypes } from './types';
 import { useTask } from './use-task';
 import { useJoinTask } from './use-join-task';
+import { useStatus } from './use-status';
+import { UserStatus } from '../../__generated__/globalTypes';
 
 export const useTaskAlertModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,6 +39,7 @@ const TaskAlertModal: React.VFC<TaskAlertModalPropTypes & ModalPropTypes> = ({
   isOpen,
   setIsOpen,
 }) => {
+  const { currentTaskId, status, loading: loadingStatus } = useStatus();
   const joinButtonRef = useRef(null);
   const { data } = useTask(taskId);
 
@@ -49,8 +52,15 @@ const TaskAlertModal: React.VFC<TaskAlertModalPropTypes & ModalPropTypes> = ({
     setIsOpen(false);
   }, [joinTask, setIsOpen]);
 
+  const show =
+    isOpen &&
+    !!task &&
+    task.id !== currentTaskId &&
+    status !== UserStatus.FLOW &&
+    !loadingStatus;
+
   return (
-    <Transition.Root show={isOpen && !!task} as={Fragment}>
+    <Transition.Root show={show} as={Fragment}>
       <Dialog
         as="div"
         className="fixed z-10 inset-0 overflow-y-auto"
