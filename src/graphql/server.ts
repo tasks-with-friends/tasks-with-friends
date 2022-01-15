@@ -66,7 +66,7 @@ export const root: Root = {
     } else if (filter === schema.TaskFilter.READY) {
       tasks = await service.getTasks({
         participantId: profile.id,
-        status: ['ready'],
+        status: ['ready', 'in-progress'],
         ...paginate(page),
       });
     } else {

@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { User, UserPage } from '../domain/v1/api.g';
-import { NullMessageBus } from './real-time';
+import { NullMessageBus } from './null-message-bus';
 import { SqlStatusCalculator } from './sql-status-calculator';
 import { SqlUserService } from './sql-user-service';
 import { StatusCalculator } from './status-calculator';

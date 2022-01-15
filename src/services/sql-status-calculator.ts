@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import Pusher from 'pusher';
 import { TaskStatus } from '../domain/v1/api.g';
-import { MessageBus, RealTime } from './real-time';
+import { MessageBus } from './message-bus';
 import { StatusCalculator } from './status-calculator';
 
 export class SqlStatusCalculator implements StatusCalculator {
@@ -65,29 +65,37 @@ export class SqlStatusCalculator implements StatusCalculator {
       .filter((r) => Number(r.count) >= r.group_size)
       .map((r) => r.external_id);
 
+    const data: Record<string, TaskStatus> = {};
+
     if (waiting.length) {
-      await this.pool.query(
-        `UPDATE ${this.schema}.tasks
+      const updated = (
+        await this.pool.query(
+          `UPDATE ${this.schema}.tasks
           SET status = 'waiting'
           WHERE status <> 'waiting' AND external_id IN (${waiting.map(
             (_, i) => `$${i + 1}`,
-          )})`,
-        waiting,
-      );
+          )}) RETURNING external_id`,
+          waiting,
+        )
+      ).rows.map((x) => x.external_id);
+      updated.forEach((id) => (data[id] = 'waiting'));
     }
 
     if (ready.length) {
-      await this.pool.query(
-        `UPDATE ${this.schema}.tasks
+      const updated = (
+        await this.pool.query<{ external_id: string }>(
+          `UPDATE ${this.schema}.tasks
           SET status = 'ready'
           WHERE status <> 'ready' AND external_id IN (${ready.map(
             (_, i) => `$${i + 1}`,
-          )})`,
-        ready,
-      );
+          )}) RETURNING external_id`,
+          ready,
+        )
+      ).rows.map((x) => x.external_id);
+      updated.forEach((id) => (data[id] = 'ready'));
     }
 
-    this.messages.onTaskStatusChanged([...ready, ...waiting]);
+    this.messages.onTaskStatusChanged(data);
 
     return [
       ...ready.map((taskId) => ({ taskId, status: 'ready' as const })),

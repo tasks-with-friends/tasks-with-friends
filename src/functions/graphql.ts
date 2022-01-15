@@ -52,6 +52,8 @@ const handler: Handler = async (event, context) => {
 
   if (cookie) headers['set-cookie'] = cookie;
 
+  await registry.get('message-bus').drain();
+
   return {
     statusCode: 200,
     headers,

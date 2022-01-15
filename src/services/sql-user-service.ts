@@ -9,7 +9,7 @@ import {
   UserService,
   UserUpdate,
 } from '../domain/v1/api.g';
-import { MessageBus } from './real-time';
+import { MessageBus } from './message-bus';
 import { StatusCalculator } from './status-calculator';
 import { buildPage, Mapping, parsePage, using } from './utils';
 
@@ -135,9 +135,12 @@ export class SqlUserService implements UserService {
         [userId, ...values],
       )
     ).rows.map(using(dbUserToUser))[0];
-    await this.messages.onUserStatusChanged([userId]);
 
     if (!updatedUser) throw new Error('Not Found');
+
+    this.messages.onUserStatusChanged({
+      [this.currentUserId]: updatedUser.status,
+    });
 
     await this.statusCalculator.recalculateTaskStatusForUsers([params.userId]);
 
