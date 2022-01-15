@@ -29,8 +29,8 @@ export type ServiceMap = {
   'message-bus': MessageBus;
   pool: Pool;
   'db-schema': string;
-  'user-loader': DataLoader<string, User | undefined>;
-  'task-loader': DataLoader<string, Task | undefined>;
+  // 'user-loader': DataLoader<string, User | undefined>;
+  // 'task-loader': DataLoader<string, Task | undefined>;
 };
 
 export const registry = new Registry<ServiceMap>();
@@ -39,31 +39,31 @@ registry.for('current-user-id').use(() => undefined);
 
 registry.for('db-schema').use(() => process.env['DB_SCHEMA'] || '');
 
-registry
-  .for('user-loader')
-  .withScope(singleton)
-  .use(
-    (get) =>
-      new DataLoader(async (userIds: string[]) => {
-        const users = (await get('user-service').getUsers({ userIds })).items;
-        return userIds.map((userId) =>
-          users.find((user) => user.id === userId),
-        );
-      }),
-  );
+// registry
+//   .for('user-loader')
+//   .withScope(singleton)
+//   .use(
+//     (get) =>
+//       new DataLoader(async (userIds: string[]) => {
+//         const users = (await get('user-service').getUsers({ userIds })).items;
+//         return userIds.map((userId) =>
+//           users.find((user) => user.id === userId),
+//         );
+//       }),
+//   );
 
-registry
-  .for('task-loader')
-  .withScope(singleton)
-  .use(
-    (get) =>
-      new DataLoader(async (taskIds: string[]) => {
-        const tasks = (await get('task-service').getTasks({ taskIds })).items;
-        return taskIds.map((taskId) =>
-          tasks.find((task) => task.id === taskId),
-        );
-      }),
-  );
+// registry
+//   .for('task-loader')
+//   .withScope(singleton)
+//   .use(
+//     (get) =>
+//       new DataLoader(async (taskIds: string[]) => {
+//         const tasks = (await get('task-service').getTasks({ taskIds })).items;
+//         return taskIds.map((taskId) =>
+//           tasks.find((task) => task.id === taskId),
+//         );
+//       }),
+//   );
 
 registry
   .for('invitation-service')

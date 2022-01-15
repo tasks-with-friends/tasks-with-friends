@@ -20,7 +20,8 @@ export function userDto(object: domain.User): schema.User {
 export const resolveUserById =
   (userId: string): schema.Resolver<schema.User> =>
   async (_, { registry }) => {
-    const user = await registry.get('user-loader').load(userId);
+    const user = await registry.get('user-service').getUser({ userId });
+    // const user = await registry.get('user-loader').load(userId);
     return userDto(user!);
   };
 

@@ -10,12 +10,16 @@ export type Root = schema.Query & schema.Mutation;
 
 export const root: Root = {
   me: async (_, { profile, registry }) => {
-    const user = await registry.get('user-loader').load(profile.id);
+    const user = await registry
+      .get('user-service')
+      .getUser({ userId: profile.id });
+    // const user = await registry.get('user-loader').load(profile.id);
 
     return userDto(user!);
   },
   user: async ({ id }, { registry }) => {
-    const user = await registry.get('user-loader').load(id);
+    const user = await registry.get('user-service').getUser({ userId: id });
+    // const user = await registry.get('user-loader').load(id);
 
     return user ? userDto(user) : null;
   },
@@ -47,7 +51,8 @@ export const root: Root = {
     return invitationConnection(invitations);
   },
   task: async ({ id }, { registry }) => {
-    const task = await registry.get('task-loader').load(id);
+    const task = await registry.get('task-service').getTask({ taskId: id });
+    // const task = await registry.get('task-loader').load(id);
     return task ? taskDto(task) : null;
   },
   tasks: async ({ filter, ...page }, { profile, registry }) => {
