@@ -31,11 +31,8 @@ export function taskDto(task: domain.Task): schema.Task {
 export const resolveTaskById =
   (taskId: string): schema.Resolver<schema.Task> =>
   async (_, { registry }) => {
-    const tasks = await registry
-      .get('task-service')
-      .getTasks({ taskIds: [taskId] });
-
-    return taskDto(tasks.items[0]);
+    const task = await registry.get('task-loader').load(taskId);
+    return taskDto(task!);
   };
 
 export function taskConnection(page: Page<domain.Task>): schema.TaskConnection {
