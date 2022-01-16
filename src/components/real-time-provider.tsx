@@ -149,7 +149,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
   return (
     <>
       {children}
-      <Modal />
+      {!!profile && <Modal />}
     </>
   );
 };
