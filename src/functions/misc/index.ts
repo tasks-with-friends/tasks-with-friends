@@ -50,8 +50,6 @@ function refreshTokenMiddleware(
   const { provider, accessToken, refreshToken } = user;
 
   if (accessToken && refreshToken && isTokenAboutToExpire(user.exp, 3540)) {
-    console.log('========== We need to refresh ==========');
-    console.log({ provider, accessToken, refreshToken });
     refresh.requestNewAccessToken(
       provider,
       refreshToken,

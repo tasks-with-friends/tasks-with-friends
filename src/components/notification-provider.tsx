@@ -72,7 +72,6 @@ export const NotificationProvider: React.FC = ({ children }) => {
 
   const pop = useCallback(
     (eventId: string) => {
-      console.log({ eventId });
       const event = notifications.find((e) => e.id === eventId);
 
       if (event) {

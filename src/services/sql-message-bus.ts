@@ -165,8 +165,6 @@ export class SqlMessageBus implements MessageBus {
       ...userMessages.currentTask.keys(),
     ]);
 
-    console.log({ recipients, userMessages });
-
     for (const recipient of recipients) {
       const message: EventMap['multi-payload:v1'] = {};
 
