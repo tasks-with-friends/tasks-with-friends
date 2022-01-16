@@ -10,6 +10,9 @@ export class NullMessageBus implements MessageBus {
   onUserCurrentTaskChanged(): void {
     return;
   }
+  onAddedToTask(): void {
+    return;
+  }
 
   drain(): Promise<void> {
     return Promise.resolve();
