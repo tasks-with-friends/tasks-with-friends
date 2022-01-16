@@ -56,7 +56,6 @@ const WRITE_USER_CURRENT_TASK = gql`
 
 export const RealTimeProvider: React.FC = ({ children }) => {
   const profile = useProfileOrNull();
-  const { status: currentUserStatus } = useStatus();
   const client = useApolloClient();
   const { push, clearTask } = useNotifications();
   const { open, Modal } = useTaskAlertModal();
@@ -88,7 +87,6 @@ export const RealTimeProvider: React.FC = ({ children }) => {
             });
             if (
               status === TaskStatus.IN_PROGRESS &&
-              currentUserStatus !== UserStatus.FLOW &&
               userStatus[profile.id] !== 'flow'
             ) {
               open(taskId);
