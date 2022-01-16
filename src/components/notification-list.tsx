@@ -102,10 +102,6 @@ const NotificationItem: React.FC<NotificationPropTypes> = ({
     children: '',
   };
 
-  // const handleDismiss = useCallback(() => {
-  //   pop(id);
-  // }, [pop, id]);
-
   switch (color) {
     case 'green':
       colorStyles.bg = 'bg-green-50';
