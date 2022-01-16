@@ -11,6 +11,7 @@ import { useProfile } from '../profile-provider';
 import { Avatar } from './avatar';
 import { ModalPropTypes } from './types';
 import { useJoinTask } from './use-join-task';
+import { useStartTask } from './use-start-task';
 import {
   ClearResponseMutation,
   ClearResponseMutationVariables,
@@ -55,24 +56,24 @@ const CLEAR_RESPONSE = gql`
   }
 `;
 
-const START_TASK = gql`
-  mutation StartTaskMutation($input: StartTaskInput!) {
-    startTask(input: $input) {
-      me {
-        id
-        status
-        currentTask {
-          id
-          status
-        }
-      }
-      task {
-        id
-        status
-      }
-    }
-  }
-`;
+// const START_TASK = gql`
+//   mutation StartTaskMutation($input: StartTaskInput!) {
+//     startTask(input: $input) {
+//       me {
+//         id
+//         status
+//         currentTask {
+//           id
+//           status
+//         }
+//       }
+//       task {
+//         id
+//         status
+//       }
+//     }
+//   }
+// `;
 
 export interface TaskModalPropTypes {
   task: TaskListItem;
@@ -100,42 +101,8 @@ const TaskModalBase: React.VFC<TaskModalPropTypes & ModalPropTypes> = ({
   const cancelButtonRef = useRef(null);
   const profile = useProfile();
 
-  const [startTask] = useMutation<
-    StartTaskMutation,
-    StartTaskMutationVariables
-  >(START_TASK);
-
-  const handleStartTask = useCallback(() => {
-    startTask({
-      variables: {
-        input: {
-          taskId: task.id,
-        },
-      },
-      optimisticResponse: {
-        startTask: {
-          __typename: 'StartTaskPayload',
-          me: {
-            __typename: 'User',
-            id: profile.id,
-            status: UserStatus.FLOW,
-            currentTask: {
-              __typename: 'Task',
-              id: task.id,
-              status: TaskStatus.IN_PROGRESS,
-            },
-          },
-          task: {
-            __typename: 'Task',
-            id: task.id,
-            status: TaskStatus.IN_PROGRESS,
-          },
-        },
-      },
-    });
-  }, [task.id, startTask, profile.id]);
-
   const [handleJoinTask] = useJoinTask(task.id);
+  const [handleStartTask] = useStartTask(task.id);
 
   const [setResponse, { loading: setting }] = useMutation<
     SetResponseMutation,
