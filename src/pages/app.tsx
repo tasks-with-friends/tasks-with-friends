@@ -1,8 +1,14 @@
 /* This example requires Tailwind CSS v2.0+ */
 import { gql, useMutation, useQuery } from '@apollo/client';
+import { ClockIcon } from '@heroicons/react/outline';
 import React, { useCallback, useState } from 'react';
+import { TaskStatus } from '../../__generated__/globalTypes';
 import { Avatar } from '../components/avatar';
 import { TaskList, TASK_LIST_ITEM } from '../components/task-list';
+import { useTaskModal } from '../components/task-modal';
+import { useJoinTask } from '../components/use-join-task';
+import { useStartTask } from '../components/use-start-task';
+import { TaskListItem } from '../components/__generated__/TaskListItem';
 
 import { Page } from '../templates/page';
 import { ConfirmationModal } from './confirmation-modal';
@@ -190,6 +196,100 @@ const InvitationsList: React.VFC<{
   );
 };
 
+interface TaskCardsPropTypes {
+  tasks: TaskListItem[];
+}
+
+const TaskCards: React.VFC<TaskCardsPropTypes> = ({ tasks }) => {
+  return (
+    <>
+      <h1 className="text-md font-medium">Let's get started!</h1>
+      <ul
+        role="list"
+        className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3"
+      >
+        {tasks.map((task) => (
+          <TaskCard key={task.id} task={task} />
+        ))}
+      </ul>
+    </>
+  );
+};
+
+const TaskCard: React.VFC<{ task: TaskListItem }> = ({ task }) => {
+  const { open, TaskModal } = useTaskModal();
+  return (
+    <>
+      <li
+        key={task.id}
+        className="col-span-1 bg-white rounded-lg drop-shadow-md px-8 py-4 flex flex-col"
+      >
+        <button className="p-4 -m-4 text-left" type="button" onClick={open}>
+          <h2 className="font-medium text-indigo-600 text-lg">{task.name}</h2>
+        </button>
+        <ul className="flex flex-row w-full justify-start items-center mt-4">
+          {task.participants.nodes.map((p) => (
+            <li key={p.id} className="mr-1">
+              <Avatar
+                name={p.user.name}
+                avatarUrl={p.user.avatarUrl || undefined}
+                size="sm"
+              />
+            </li>
+          ))}
+          <li className="ml-1">
+            <span className="flex flex-row items-center">
+              <ClockIcon className="w-6 h-6 mr-1" />
+              {task.durationMinutes}m
+            </span>
+          </li>
+        </ul>
+        <div className="grow"></div>
+        <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+          <TaskButton taskId={task.id} status={task.status} />
+        </div>
+      </li>
+      <TaskModal task={task} />
+    </>
+  );
+};
+
+const TaskButton: React.VFC<{ taskId: string; status: TaskStatus }> = ({
+  taskId,
+  status,
+}) => {
+  const text = status === TaskStatus.IN_PROGRESS ? 'Join' : 'Start';
+  const colorStyle =
+    status === TaskStatus.IN_PROGRESS
+      ? 'border-green-500 bg-green-50 text-green-500 hover:bg-green-100 focus:ring-green-500'
+      : 'border-indigo-500 bg-indigo-50 text-indigo-500 hover:bg-indigo-100 focus:ring-indigo-500';
+
+  const [startTask] = useStartTask(taskId);
+  const [joinTask] = useJoinTask(taskId);
+
+  const handleClick: React.MouseEventHandler<HTMLButtonElement> = useCallback(
+    (e) => {
+      e.stopPropagation();
+      if (status === TaskStatus.IN_PROGRESS) {
+        joinTask();
+      } else {
+        startTask();
+      }
+    },
+    [status, joinTask, startTask],
+  );
+
+  return (
+    <button
+      type="button"
+      className={`w-full inline-flex justify-center rounded-md border-2 shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 sm:ml-3 sm:w-auto sm:text-sm transition duration-150 ${colorStyle}`}
+      onClick={handleClick}
+    >
+      {text}
+    </button>
+  );
+};
+
 const DashboardGuts: React.VFC = () => {
   const { data, loading, error } = useQuery<GetDashboardQuery>(GET_DASHBOARD);
 
@@ -201,7 +301,7 @@ const DashboardGuts: React.VFC = () => {
     {!!data?.incomingInvitations?.nodes?.length && (
       <InvitationsList invitations={data?.incomingInvitations?.nodes} />
     )}
-    {!!data?.tasks?.nodes?.length && <TaskList tasks={data.tasks.nodes} />}
+    {!!data?.tasks?.nodes?.length && <TaskCards tasks={data.tasks.nodes} />}
   </div>;
 
   return (
@@ -210,7 +310,7 @@ const DashboardGuts: React.VFC = () => {
       {!!data?.incomingInvitations?.nodes?.length && (
         <InvitationsList invitations={data?.incomingInvitations?.nodes} />
       )}
-      {!!data?.tasks?.nodes?.length && <TaskList tasks={data.tasks.nodes} />}
+      {!!data?.tasks?.nodes?.length && <TaskCards tasks={data.tasks.nodes} />}
     </div>
   );
 };
