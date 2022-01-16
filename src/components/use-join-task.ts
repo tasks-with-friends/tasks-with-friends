@@ -3,6 +3,7 @@ import { Maybe } from 'graphql/jsutils/Maybe';
 import { useCallback, useMemo } from 'react';
 import { TaskStatus, UserStatus } from '../../__generated__/globalTypes';
 import { useProfile } from '../profile-provider';
+import { useNotifications } from './notification-provider';
 import {
   JoinTaskMutation,
   JoinTaskMutationVariables,
@@ -28,6 +29,7 @@ export const JOIN_TASK = gql`
 `;
 
 export function useJoinTask(taskId: Maybe<string>) {
+  const { clearTask } = useNotifications();
   const [mutation, result] = useMutation<
     JoinTaskMutation,
     JoinTaskMutationVariables
@@ -37,6 +39,7 @@ export function useJoinTask(taskId: Maybe<string>) {
 
   const joinTask = useCallback(() => {
     if (taskId) {
+      clearTask(taskId);
       mutation({
         variables: {
           input: {
@@ -65,7 +68,7 @@ export function useJoinTask(taskId: Maybe<string>) {
         },
       });
     }
-  }, [taskId, mutation, profile.id]);
+  }, [taskId, mutation, profile.id, clearTask]);
 
   return useMemo<[() => void, MutationResult<JoinTaskMutation>]>(
     () => [joinTask, result],

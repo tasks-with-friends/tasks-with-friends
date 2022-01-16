@@ -7,6 +7,7 @@ import { useTask } from './use-task';
 import { useJoinTask } from './use-join-task';
 import { useStatus } from './use-status';
 import { UserStatus } from '../../__generated__/globalTypes';
+import { useNotifications } from './notification-provider';
 
 export const useTaskAlertModal = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,6 +40,7 @@ const TaskAlertModal: React.VFC<TaskAlertModalPropTypes & ModalPropTypes> = ({
   isOpen,
   setIsOpen,
 }) => {
+  const { clearTask } = useNotifications();
   const { currentTaskId, status, loading: loadingStatus } = useStatus();
   const joinButtonRef = useRef(null);
   const { data } = useTask(taskId);
@@ -48,9 +50,10 @@ const TaskAlertModal: React.VFC<TaskAlertModalPropTypes & ModalPropTypes> = ({
   const [joinTask] = useJoinTask(task?.id);
 
   const handleJoinTask = useCallback(() => {
-    joinTask();
     setIsOpen(false);
-  }, [joinTask, setIsOpen]);
+    clearTask(task?.id);
+    joinTask();
+  }, [joinTask, setIsOpen, clearTask, task?.id]);
 
   const show =
     isOpen &&
@@ -117,7 +120,7 @@ const TaskAlertModal: React.VFC<TaskAlertModalPropTypes & ModalPropTypes> = ({
                       <span className="text-indigo-600 font-bold">
                         {task?.name}
                       </span>
-                      ? Joining now will help keep you and your friends
+                      ? Joining now will help you and your friends stay
                       productive.
                     </p>
                   </div>

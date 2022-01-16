@@ -2,6 +2,7 @@ import { gql, useMutation } from '@apollo/client';
 import React, { useCallback, useEffect } from 'react';
 import { TaskStatus, UserStatus } from '../../__generated__/globalTypes';
 import { Avatar } from '../components/avatar';
+import { useNotifications } from '../components/notification-provider';
 import { useStatus } from '../components/use-status';
 import { useTask } from '../components/use-task';
 import { TaskListItem } from '../components/__generated__/TaskListItem';
@@ -58,6 +59,7 @@ const TaskDisplay: React.VFC<{
   currentTask: TaskListItem;
   className?: string;
 }> = ({ currentTask, className }) => {
+  const { clearTask } = useNotifications();
   const profile = useProfile();
 
   const [endTask] = useMutation<EndTaskMutation, EndTaskMutationVariables>(
@@ -65,6 +67,7 @@ const TaskDisplay: React.VFC<{
   );
   const handleEndTask = useCallback(() => {
     if (!currentTask?.id) return;
+    clearTask(currentTask.id);
     endTask({
       variables: {
         input: {
@@ -89,7 +92,7 @@ const TaskDisplay: React.VFC<{
       },
       refetchQueries: [{ query: GET_DASHBOARD }],
     });
-  }, [endTask, currentTask?.id, profile.id]);
+  }, [endTask, currentTask?.id, profile.id, clearTask]);
 
   const [leaveTask] = useMutation<
     LeaveTaskMutation,
@@ -97,6 +100,7 @@ const TaskDisplay: React.VFC<{
   >(LEAVE_TASK);
   const handleLeaveTask = useCallback(() => {
     if (!currentTask?.id) return;
+    clearTask(currentTask.id);
     leaveTask({
       variables: {
         input: {
@@ -121,7 +125,7 @@ const TaskDisplay: React.VFC<{
       },
       refetchQueries: [{ query: GET_DASHBOARD }],
     });
-  }, [leaveTask, currentTask?.id, profile.id]);
+  }, [leaveTask, currentTask?.id, profile.id, clearTask]);
 
   return (
     <div className={`${className || ''} flex flex-col items-center`}>
