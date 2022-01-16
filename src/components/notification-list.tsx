@@ -61,7 +61,7 @@ const TaskNotificationItem: React.VFC<{ notification: TaskNotification }> = ({
         color="green"
         action="A task just started!"
         onAction={joinTask}
-        onDismiss={() => pop(notification.taskId)}
+        onDismiss={() => pop(notification.id)}
       >
         <p>
           Do you want to join the task{' '}
