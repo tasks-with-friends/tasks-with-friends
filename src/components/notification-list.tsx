@@ -1,18 +1,42 @@
-import { SpeakerphoneIcon } from '@heroicons/react/solid';
-import React, { useCallback } from 'react';
 import {
-  TaskNotification,
-  TaskNotificationType,
-  useNotifications,
-} from './notification-provider';
+  InformationCircleIcon,
+  SpeakerphoneIcon,
+} from '@heroicons/react/solid';
+import React, { useState } from 'react';
+import { TaskNotification, useNotifications } from './notification-provider';
 import { useJoinTask } from './use-join-task';
 import { useTask } from './use-task';
 
 export const NotificationList: React.VFC = () => {
+  const [permission, setPermission] = useState<
+    'default' | 'denied' | 'granted' | 'dismissed'
+  >(Notification.permission);
   const { notifications } = useNotifications();
-  if (!notifications.length) return null;
+  if (!notifications.length && permission !== 'default') return null;
   return (
     <ul className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+      {permission === 'default' && (
+        <NotificationItem
+          title="Tasks with Friends needs your premission to enable desktop
+          notifications"
+          Icon={InformationCircleIcon}
+          color="indigo"
+          action="Enable notifications"
+          onAction={() =>
+            Notification.requestPermission().then((value) =>
+              setPermission(value),
+            )
+          }
+          onDismiss={() => setPermission('dismissed')}
+        >
+          <p>
+            Desktop notifications will alert you about important events such as
+            when a friend has started a task and wants you to join too. If you
+            choose not to enable notifications, you will always see
+            notifications right here in the app.
+          </p>
+        </NotificationItem>
+      )}
       {notifications.map((n) => (
         <TaskNotificationItem key={n.id} notification={n} />
       ))}
@@ -25,18 +49,19 @@ const TaskNotificationItem: React.VFC<{ notification: TaskNotification }> = ({
 }) => {
   const [joinTask] = useJoinTask(notification.taskId);
   const { data, loading } = useTask(notification.taskId);
+  const { pop } = useNotifications();
 
   if (loading || !data?.task) return null;
 
   if (notification.type === 'started') {
     return (
       <NotificationItem
-        id={notification.id}
         title="Task Started"
         Icon={SpeakerphoneIcon}
         color="green"
         action="A task just started!"
         onAction={joinTask}
+        onDismiss={() => pop(notification.taskId)}
       >
         <p>
           Do you want to join the task{' '}
@@ -51,23 +76,25 @@ const TaskNotificationItem: React.VFC<{ notification: TaskNotification }> = ({
 };
 
 interface NotificationPropTypes {
-  id: string;
   title: string;
   color: 'green' | 'indigo';
-  action: string;
+  action?: string;
   onAction?: React.MouseEventHandler<HTMLButtonElement>;
+  dismiss?: string;
+  onDismiss: React.MouseEventHandler<HTMLButtonElement>;
   Icon: React.VFC<React.ComponentProps<'svg'>>;
 }
 
 const NotificationItem: React.FC<NotificationPropTypes> = ({
-  id,
   title,
   color,
+  action,
   onAction,
+  dismiss = 'Dismiss',
+  onDismiss,
   Icon,
   children,
 }) => {
-  const { pop } = useNotifications();
   const colorStyles = {
     bg: '',
     icon: '',
@@ -75,9 +102,9 @@ const NotificationItem: React.FC<NotificationPropTypes> = ({
     children: '',
   };
 
-  const handleDismiss = useCallback(() => {
-    pop(id);
-  }, [pop, id]);
+  // const handleDismiss = useCallback(() => {
+  //   pop(id);
+  // }, [pop, id]);
 
   switch (color) {
     case 'green':
@@ -95,7 +122,7 @@ const NotificationItem: React.FC<NotificationPropTypes> = ({
   }
 
   return (
-    <li className={`rounded-md p-4 ${colorStyles.bg}`}>
+    <li className={`rounded-md p-4 mt-2 ${colorStyles.bg}`}>
       <div className="flex">
         <div className="flex-shrink-0">
           <Icon className={`h-5 w-5 ${colorStyles.icon}`} aria-hidden="true" />
@@ -109,11 +136,13 @@ const NotificationItem: React.FC<NotificationPropTypes> = ({
           </div>
           <div className="mt-4">
             <div className="-mx-2 -my-1.5 flex">
-              <NotificationButton color={color} onClick={onAction}>
-                Join task
-              </NotificationButton>
-              <NotificationButton color={color} onClick={handleDismiss}>
-                Dismiss
+              {!!action && !!onAction && (
+                <NotificationButton color={color} onClick={onAction}>
+                  {action}
+                </NotificationButton>
+              )}
+              <NotificationButton color={color} onClick={onDismiss}>
+                {dismiss}
               </NotificationButton>
             </div>
           </div>
@@ -141,7 +170,8 @@ const NotificationButton: React.FC<NotificationButtonPropTypes> = ({
         'bg-green-50 text-green-800 hover:bg-green-100 focus:ring-offset-green-50 focus:ring-green-600';
       break;
     case 'indigo':
-      colorStyle = '';
+      colorStyle =
+        'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 focus:ring-offset-indigo-50 focus:ring-indigo-600';
       break;
   }
 
