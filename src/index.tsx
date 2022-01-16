@@ -7,6 +7,7 @@ import { ProfileProvider } from './profile-provider';
 import { Router } from './router';
 
 import { RealTimeProvider } from './components/real-time-provider';
+import { NotificationProvider } from './components/notification-provider';
 
 console.log(JSON.stringify(buildInfo, null, 2));
 
@@ -18,9 +19,11 @@ const apolloClient = new ApolloClient({
 render(
   <ApolloProvider client={apolloClient}>
     <ProfileProvider>
-      <RealTimeProvider>
-        <Router />
-      </RealTimeProvider>
+      <NotificationProvider>
+        <RealTimeProvider>
+          <Router />
+        </RealTimeProvider>
+      </NotificationProvider>
     </ProfileProvider>
   </ApolloProvider>,
   document.getElementById('app-root'),

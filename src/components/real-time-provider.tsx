@@ -22,6 +22,7 @@ import {
   WriteUserCurrentTask,
   WriteUserCurrentTaskVariables,
 } from './__generated__/WriteUserCurrentTask';
+import { useNotifications } from './notification-provider';
 
 const WRITE_TASK_STATUS = gql`
   query WriteTaskStatus($taskId: ID!) {
@@ -55,6 +56,7 @@ const WRITE_USER_CURRENT_TASK = gql`
 export const RealTimeProvider: React.FC = ({ children }) => {
   const profile = useProfileOrNull();
   const client = useApolloClient();
+  const { push } = useNotifications();
   const { open, Modal } = useTaskAlertModal();
 
   useEffect(() => {
@@ -84,6 +86,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
             });
             if (status === TaskStatus.IN_PROGRESS) {
               open(taskId);
+              push(taskId, 'started');
             }
           }
 
@@ -145,7 +148,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
         // empty
       };
     }
-  }, [profile, client, open]);
+  }, [profile, client, open, push]);
   return (
     <>
       {children}

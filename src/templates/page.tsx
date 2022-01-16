@@ -8,6 +8,7 @@ import { UserStatus } from '../../__generated__/globalTypes';
 import { useStatus } from '../components/use-status';
 import { Flow } from '../pages/flow';
 import { Avatar } from '../components/avatar';
+import { NotificationList } from '../components/notification-list';
 
 const navigation = [
   { name: 'Dashboard', to: '/' },
@@ -269,6 +270,7 @@ export const Page: React.FC<{ title: string }> = ({ title, children }) => {
           </div>
         </header>
         <main>
+          <NotificationList />
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             {children}
           </div>
