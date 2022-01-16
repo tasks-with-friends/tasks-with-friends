@@ -58,7 +58,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
   const profile = useProfileOrNull();
   const { status: currentUserStatus } = useStatus();
   const client = useApolloClient();
-  const { push } = useNotifications();
+  const { push, clearTask } = useNotifications();
   const { open, Modal } = useTaskAlertModal();
 
   useEffect(() => {
@@ -93,6 +93,10 @@ export const RealTimeProvider: React.FC = ({ children }) => {
             ) {
               open(taskId);
               push(taskId, 'started');
+            }
+
+            if (status !== TaskStatus.IN_PROGRESS) {
+              clearTask(taskId);
             }
           }
 
@@ -154,7 +158,7 @@ export const RealTimeProvider: React.FC = ({ children }) => {
         // empty
       };
     }
-  }, [profile, client, open, push]);
+  }, [profile, client, open, push, clearTask]);
   return (
     <>
       {children}
