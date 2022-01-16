@@ -1,5 +1,12 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 import * as uuid from 'uuid';
+import { useDocumentVisibility } from './use-document-visibility';
 
 export interface NotificationContextPropTypes {
   push(taskId: string, type: TaskNotificationType): void;
@@ -32,6 +39,7 @@ export function useNotifications(): NotificationContextPropTypes {
 }
 
 export const NotificationProvider: React.FC = ({ children }) => {
+  const { hidden } = useDocumentVisibility();
   const [notifications, setNotifications] = useState<TaskNotification[]>([]);
 
   const push = useCallback(
@@ -42,10 +50,24 @@ export const NotificationProvider: React.FC = ({ children }) => {
         type,
         ts: new Date().getTime(),
       };
-      // TODO: if the page is in the background, send a system notification
+      if (hidden) {
+        try {
+          const n = new Notification('A task just started!', {
+            body: 'Head back to help out!',
+            requireInteraction: true,
+          });
+          n.onclick = () => {
+            window.focus();
+            n.close();
+          };
+        } catch (ex) {
+          console.warn('Browser does not support Notifications', ex);
+        }
+      }
+
       setNotifications([...notifications, event]);
     },
-    [notifications],
+    [notifications, hidden],
   );
 
   const pop = useCallback(
