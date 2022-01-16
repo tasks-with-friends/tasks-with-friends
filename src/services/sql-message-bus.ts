@@ -13,6 +13,7 @@ export class SqlMessageBus implements MessageBus {
   private readonly taskStatus: Map<string, TaskStatus> = new Map();
   private readonly userStatus: Map<string, UserStatus> = new Map();
   private readonly userCurrentTask: Map<string, Task['id'] | null> = new Map();
+  private readonly userAddedToTask: Map<string, Task['id']> = new Map();
 
   onTaskStatusChanged(statusByTaskId: Record<string, TaskStatus>) {
     for (const taskId of Object.keys(statusByTaskId)) {
@@ -31,6 +32,11 @@ export class SqlMessageBus implements MessageBus {
   ): void {
     for (const userId of Object.keys(taskByUserId)) {
       this.userCurrentTask.set(userId, taskByUserId[userId]);
+    }
+  }
+  onAddedToTask(taskByUserId: Record<string, Task['id']>): void {
+    for (const userId of Object.keys(taskByUserId)) {
+      this.userAddedToTask.set(userId, taskByUserId[userId]);
     }
   }
 
@@ -163,6 +169,7 @@ export class SqlMessageBus implements MessageBus {
       ...taskMessages.keys(),
       ...userMessages.status.keys(),
       ...userMessages.currentTask.keys(),
+      ...this.userAddedToTask.keys(),
     ]);
 
     for (const recipient of recipients) {
@@ -176,6 +183,9 @@ export class SqlMessageBus implements MessageBus {
 
       const c = userMessages.currentTask.get(recipient);
       if (c) message.userCurrentTask = toRecord(c);
+
+      const a = this.userAddedToTask.get(recipient);
+      if (a) message.addedToTask = a;
 
       await this.realTime.trigger(recipient, 'multi-payload:v1', message);
     }

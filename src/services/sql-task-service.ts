@@ -467,6 +467,7 @@ export class SqlTaskService implements TaskService {
     participants: NewParticipant[];
   }): Promise<ParticipantList> {
     if (!this.currentUserId) throw new Error('Unauthorized');
+    if (!params.participants.length) return { items: [] };
 
     const userIds = params.participants.map((p) => p.userId);
 
@@ -482,6 +483,12 @@ export class SqlTaskService implements TaskService {
     ).rows.map(using(dbParticipantToParticipant));
 
     // consider recalculating task status if a participant status of 'YES' is added
+
+    const data: Record<string, string> = {};
+    for (const item of items) {
+      data[item.userId] = params.taskId;
+    }
+    this.messages.onAddedToTask(data);
 
     return { items };
   }
