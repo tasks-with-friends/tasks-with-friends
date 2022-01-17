@@ -176,6 +176,7 @@ export class SqlMessageBus implements MessageBus {
       ...userMessages.status.keys(),
       ...userMessages.currentTask.keys(),
       ...this.userAddedToTask.keys(),
+      ...this.userRemovedFromTask.keys(),
     ]);
 
     for (const recipient of recipients) {
