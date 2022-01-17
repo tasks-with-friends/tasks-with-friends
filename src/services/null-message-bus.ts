@@ -13,6 +13,9 @@ export class NullMessageBus implements MessageBus {
   onAddedToTask(): void {
     return;
   }
+  onRemovedFromTask(): void {
+    return;
+  }
 
   drain(): Promise<void> {
     return Promise.resolve();

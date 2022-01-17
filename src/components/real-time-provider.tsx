@@ -76,10 +76,23 @@ export const RealTimeProvider: React.FC = ({ children }) => {
           userStatus = {},
           userCurrentTask = {},
           addedToTask,
+          removedFromTask,
         }) => {
           if (addedToTask) {
             clearTask(addedToTask);
             push(addedToTask, 'need-response');
+          }
+
+          if (removedFromTask) {
+            clearTask(removedFromTask);
+
+            client.cache.evict({
+              id: client.cache.identify({
+                __typename: 'Task',
+                id: removedFromTask,
+              }),
+            });
+            client.cache.gc();
           }
 
           for (const taskId of Object.keys(taskStatus)) {

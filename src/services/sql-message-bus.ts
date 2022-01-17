@@ -14,6 +14,7 @@ export class SqlMessageBus implements MessageBus {
   private readonly userStatus: Map<string, UserStatus> = new Map();
   private readonly userCurrentTask: Map<string, Task['id'] | null> = new Map();
   private readonly userAddedToTask: Map<string, Task['id']> = new Map();
+  private readonly userRemovedFromTask: Map<string, Task['id']> = new Map();
 
   onTaskStatusChanged(statusByTaskId: Record<string, TaskStatus>) {
     for (const taskId of Object.keys(statusByTaskId)) {
@@ -37,6 +38,11 @@ export class SqlMessageBus implements MessageBus {
   onAddedToTask(taskByUserId: Record<string, Task['id']>): void {
     for (const userId of Object.keys(taskByUserId)) {
       this.userAddedToTask.set(userId, taskByUserId[userId]);
+    }
+  }
+  onRemovedFromTask(taskByUserId: Record<string, Task['id']>): void {
+    for (const userId of Object.keys(taskByUserId)) {
+      this.userRemovedFromTask.set(userId, taskByUserId[userId]);
     }
   }
 
@@ -187,6 +193,9 @@ export class SqlMessageBus implements MessageBus {
       const a = this.userAddedToTask.get(recipient);
       if (a) message.addedToTask = a;
 
+      const r = this.userRemovedFromTask.get(recipient);
+      if (r) message.removedFromTask = r;
+
       await this.realTime.trigger(recipient, 'multi-payload:v1', message);
     }
 
@@ -194,6 +203,7 @@ export class SqlMessageBus implements MessageBus {
     this.userStatus.clear();
     this.userCurrentTask.clear();
     this.userAddedToTask.clear();
+    this.userRemovedFromTask.clear();
   }
 }
 

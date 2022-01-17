@@ -442,11 +442,20 @@ export class SqlTaskService implements TaskService {
   async removeTask(params: { taskId: string }): Promise<Task> {
     if (!this.currentUserId) throw new Error('Unauthorized');
 
-    await this.pool.query<DbTask>(
-      `DELETE FROM ONLY ${this.schema}.participants
-        WHERE task_external_id = $1`,
-      [params.taskId],
-    );
+    const removedUserIds = (
+      await this.pool.query<{ user_external_id: string }>(
+        `DELETE FROM ONLY ${this.schema}.participants
+        WHERE task_external_id = $1
+        RETURNING user_external_id`,
+        [params.taskId],
+      )
+    ).rows.map((r) => r.user_external_id);
+
+    const data: Record<string, string> = {};
+    for (const userId of removedUserIds) {
+      data[userId] = params.taskId;
+    }
+    this.messages.onRemovedFromTask(data);
 
     const deleted = (
       await this.pool.query<DbTask>(
@@ -587,6 +596,8 @@ export class SqlTaskService implements TaskService {
     ).rows.map(using(dbParticipantToParticipant))[0];
 
     if (!deleted) throw new Error('Not Found');
+
+    this.messages.onAddedToTask({ [deleted.userId]: params.taskId });
 
     await this.statusCalculator.recalculateTaskStatus([params.taskId]);
 

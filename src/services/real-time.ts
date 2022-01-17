@@ -32,5 +32,6 @@ export type EventMap = {
     taskStatus?: Record<string, TaskStatus>;
     userCurrentTask?: Record<string, Task['id'] | null>;
     addedToTask?: string;
+    removedFromTask?: string;
   };
 };

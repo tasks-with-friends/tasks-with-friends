@@ -5,6 +5,7 @@ export interface MessageBus {
   onUserStatusChanged(data: Record<string, UserStatus>): void;
   onUserCurrentTaskChanged(data: Record<string, Task['id'] | null>): void;
   onAddedToTask(data: Record<string, Task['id']>): void;
+  onRemovedFromTask(data: Record<string, Task['id']>): void;
 
   drain(): Promise<void>;
 }
