@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom';
 import {
   ParticipantResponse,
   TaskStatus,
-  UserStatus,
 } from '../../__generated__/globalTypes';
 import { useProfile } from '../profile-provider';
 import { Avatar } from './avatar';
@@ -20,10 +19,6 @@ import {
   SetResponseMutation,
   SetResponseMutationVariables,
 } from './__generated__/SetResponseMutation';
-import {
-  StartTaskMutation,
-  StartTaskMutationVariables,
-} from './__generated__/StartTaskMutation';
 import { TaskListItem } from './__generated__/TaskListItem';
 
 const SET_RESPONSE = gql`
@@ -55,25 +50,6 @@ const CLEAR_RESPONSE = gql`
     }
   }
 `;
-
-// const START_TASK = gql`
-//   mutation StartTaskMutation($input: StartTaskInput!) {
-//     startTask(input: $input) {
-//       me {
-//         id
-//         status
-//         currentTask {
-//           id
-//           status
-//         }
-//       }
-//       task {
-//         id
-//         status
-//       }
-//     }
-//   }
-// `;
 
 export interface TaskModalPropTypes {
   task: TaskListItem;
@@ -255,7 +231,6 @@ const TaskModalBase: React.VFC<TaskModalPropTypes & ModalPropTypes> = ({
                 <button
                   type="button"
                   onClick={handleClickYes}
-                  // className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                   className={`relative inline-flex items-center px-4 py-2 rounded-l-md border text-sm font-medium text-gray-700 focus:z-20 focus:outline-none focus:ring-1 ${
                     me?.response === ParticipantResponse.YES
                       ? 'hover:bg-green-50 bg-green-200 focus:ring-green-500 border-green-500 z-10'
