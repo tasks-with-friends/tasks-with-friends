@@ -21,7 +21,7 @@
     "clean:build": "rimraf build",
     "clean:client-types": "find . -name __generated__ | xargs rm -rf",
     "copyfiles": "run-s copyfiles:*",
-    "copyfiles:static": "copyfiles -u 1 static/**.* static/* build/dist",
+    "copyfiles:static": "copyfiles -u 1 static/**.* static/* static/**/* build/dist",
     "build-info": "ts-node tools/build-info.ts > src/build-info.ts",
     "lint": "run-s lint:*",
     "lint:eslint": "eslint src/**/*.ts",
