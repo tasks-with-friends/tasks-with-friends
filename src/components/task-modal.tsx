@@ -1,4 +1,3 @@
-import { gql, useMutation } from '@apollo/client';
 import { Dialog, Transition } from '@headlessui/react';
 import React, { Fragment, useCallback, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -10,46 +9,9 @@ import { useProfile } from '../profile-provider';
 import { Avatar } from './avatar';
 import { ModalPropTypes } from './types';
 import { useJoinTask } from './use-join-task';
+import { useSetResponse } from './use-set-response';
 import { useStartTask } from './use-start-task';
-import {
-  ClearResponseMutation,
-  ClearResponseMutationVariables,
-} from './__generated__/ClearResponseMutation';
-import {
-  SetResponseMutation,
-  SetResponseMutationVariables,
-} from './__generated__/SetResponseMutation';
 import { TaskListItem } from './__generated__/TaskListItem';
-
-const SET_RESPONSE = gql`
-  mutation SetResponseMutation($input: SetResponseInput!) {
-    setResponse(input: $input) {
-      participant {
-        id
-        response
-        task {
-          id
-          status
-        }
-      }
-    }
-  }
-`;
-
-const CLEAR_RESPONSE = gql`
-  mutation ClearResponseMutation($input: ClearResponseInput!) {
-    clearResponse(input: $input) {
-      participant {
-        id
-        response
-        task {
-          id
-          status
-        }
-      }
-    }
-  }
-`;
 
 export interface TaskModalPropTypes {
   task: TaskListItem;
@@ -79,65 +41,7 @@ const TaskModalBase: React.VFC<TaskModalPropTypes & ModalPropTypes> = ({
 
   const [handleJoinTask] = useJoinTask(task.id);
   const [handleStartTask] = useStartTask(task.id);
-
-  const [setResponse, { loading: setting }] = useMutation<
-    SetResponseMutation,
-    SetResponseMutationVariables
-  >(SET_RESPONSE);
-
-  const [clearResponse, { loading: clearing }] = useMutation<
-    ClearResponseMutation,
-    ClearResponseMutationVariables
-  >(CLEAR_RESPONSE);
-
-  const handleResponse = useCallback(
-    (
-      taskId: string,
-      participantId: string,
-      response: ParticipantResponse | null,
-    ) => {
-      if (response === null) {
-        clearResponse({
-          variables: { input: { taskId, participantId } },
-          optimisticResponse: {
-            clearResponse: {
-              __typename: 'ClearResponsePayload',
-              participant: {
-                __typename: 'Participant',
-                id: participantId,
-                response: null,
-                task: {
-                  __typename: 'Task',
-                  id: taskId,
-                  status: task.status,
-                },
-              },
-            },
-          },
-        });
-      } else {
-        setResponse({
-          variables: { input: { taskId, participantId, response } },
-          optimisticResponse: {
-            setResponse: {
-              __typename: 'SetResponsePayload',
-              participant: {
-                __typename: 'Participant',
-                id: participantId,
-                response,
-                task: {
-                  __typename: 'Task',
-                  id: taskId,
-                  status: task.status,
-                },
-              },
-            },
-          },
-        });
-      }
-    },
-    [setResponse, clearResponse, task.status],
-  );
+  const [setResponse] = useSetResponse(task);
 
   const me = useMemo(
     () => task.participants.nodes.find((p) => p.user.id === profile.id),
@@ -147,22 +51,22 @@ const TaskModalBase: React.VFC<TaskModalPropTypes & ModalPropTypes> = ({
   const handleClickYes = useCallback(() => {
     if (me?.id) {
       if (me?.response === ParticipantResponse.YES) {
-        handleResponse(task.id, me.id, null);
+        setResponse(null);
       } else {
-        handleResponse(task.id, me.id, ParticipantResponse.YES);
+        setResponse(ParticipantResponse.YES);
       }
     }
-  }, [me?.id, me?.response, task.id, handleResponse]);
+  }, [me?.id, me?.response, setResponse]);
 
   const handleClickNo = useCallback(() => {
     if (me?.id) {
       if (me?.response === ParticipantResponse.NO) {
-        handleResponse(task.id, me.id, null);
+        setResponse(null);
       } else {
-        handleResponse(task.id, me.id, ParticipantResponse.NO);
+        setResponse(ParticipantResponse.NO);
       }
     }
-  }, [me?.id, me?.response, task.id, handleResponse]);
+  }, [me?.id, me?.response, setResponse]);
 
   return (
     <Transition.Root show={isOpen} as={Fragment}>

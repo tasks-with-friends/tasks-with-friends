@@ -29,7 +29,7 @@ export type TaskNotification = {
   ts: number;
 };
 
-export type TaskNotificationType = 'ready' | 'started';
+export type TaskNotificationType = 'ready' | 'started' | 'need-response';
 
 const NotificationContext =
   React.createContext<NotificationContextPropTypes>(defaultProps);

@@ -71,7 +71,17 @@ export const RealTimeProvider: React.FC = ({ children }) => {
       handleEvent(
         channel,
         'multi-payload:v1',
-        ({ taskStatus = {}, userStatus = {}, userCurrentTask = {} }) => {
+        ({
+          taskStatus = {},
+          userStatus = {},
+          userCurrentTask = {},
+          addedToTask,
+        }) => {
+          if (addedToTask) {
+            clearTask(addedToTask);
+            push(addedToTask, 'need-response');
+          }
+
           for (const taskId of Object.keys(taskStatus)) {
             const status = mapTaskStatus(taskStatus[taskId]);
             client.writeQuery<WriteTaskStatus, WriteTaskStatusVariables>({

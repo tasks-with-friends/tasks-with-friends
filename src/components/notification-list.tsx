@@ -1,10 +1,13 @@
 import {
   InformationCircleIcon,
   SpeakerphoneIcon,
+  UserAddIcon,
 } from '@heroicons/react/solid';
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { ParticipantResponse } from '../../__generated__/globalTypes';
 import { TaskNotification, useNotifications } from './notification-provider';
 import { useJoinTask } from './use-join-task';
+import { useSetResponse } from './use-set-response';
 import { useTask } from './use-task';
 
 export const NotificationList: React.VFC = () => {
@@ -49,17 +52,28 @@ const TaskNotificationItem: React.VFC<{ notification: TaskNotification }> = ({
 }) => {
   const [joinTask] = useJoinTask(notification.taskId);
   const { data, loading } = useTask(notification.taskId);
+  const [setResponse] = useSetResponse(data?.task);
   const { pop } = useNotifications();
+
+  const handleYes = useCallback(() => {
+    setResponse(ParticipantResponse.YES);
+    pop(notification.id);
+  }, [setResponse, pop, notification]);
+
+  const handleNo = useCallback(() => {
+    setResponse(ParticipantResponse.NO);
+    pop(notification.id);
+  }, [setResponse, pop, notification]);
 
   if (loading || !data?.task) return null;
 
   if (notification.type === 'started') {
     return (
       <NotificationItem
-        title="Task Started"
+        title="A task just started!"
         Icon={SpeakerphoneIcon}
         color="green"
-        action="A task just started!"
+        action="Join task"
         onAction={joinTask}
         onDismiss={() => pop(notification.id)}
       >
@@ -67,6 +81,24 @@ const TaskNotificationItem: React.VFC<{ notification: TaskNotification }> = ({
           Do you want to join the task{' '}
           <span className="font-medium">{data.task.name}</span>? Joining now
           will help you and your friends stay productive.
+        </p>
+      </NotificationItem>
+    );
+  } else if (notification.type === 'need-response') {
+    return (
+      <NotificationItem
+        title="You have been added to a task"
+        Icon={UserAddIcon}
+        color="indigo"
+        action="Yes"
+        onAction={handleYes}
+        dismiss="No"
+        onDismiss={handleNo}
+      >
+        <p>
+          <span className="font-medium">{data.task.owner.name}</span> has
+          invited you to <span className="font-medium">{data.task.name}</span>.
+          Let them know if you will be able to help.
         </p>
       </NotificationItem>
     );
