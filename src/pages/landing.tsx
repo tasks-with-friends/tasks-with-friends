@@ -2,11 +2,11 @@
 import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import {
+  ClockIcon,
   FireIcon,
-  GlobeAltIcon,
   InboxIcon,
   LightningBoltIcon,
-  ScaleIcon,
+  SparklesIcon,
   UserGroupIcon,
 } from '@heroicons/react/outline';
 import { GoogleIcon } from '../components/google-icon';
@@ -113,7 +113,10 @@ export const Landing: React.VFC = () => {
                       className="inline-flex items-center px-4 py-2 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50"
                     >
                       <GoogleIcon className="h-5 w-5 mr-2" />
-                      Sign in with Google
+                      <span className="inline sm:hidden">Sign in</span>
+                      <span className="hidden sm:inline">
+                        Sign in with Google
+                      </span>
                     </a>
                   </span>
                 </div>
@@ -128,10 +131,28 @@ export const Landing: React.VFC = () => {
                 <span className="block text-indigo-600 xl:inline">Friends</span>
               </h1>
               <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
-                Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui
-                lorem cupidatat commodo. Elit sunt amet fugiat veniam occaecat
-                fugiat aliqua.
+                It’s social task management. Make a to-do list. Invite your
+                friends to help. Focus on what needs to get done. Keep everyone
+                unblocked.
               </p>
+              <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+                <div className="rounded-md shadow">
+                  <a
+                    href="/auth/google"
+                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10"
+                  >
+                    Try it for free!
+                  </a>
+                </div>
+                {/* <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                  <a
+                    href="#"
+                    className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-indigo-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                  >
+                    Live demo
+                  </a>
+                </div> */}
+              </div>
             </div>
           </main>
         </div>
@@ -180,40 +201,37 @@ export const Landing: React.VFC = () => {
             <p className="mt-4 max-w-3xl mx-auto text-center text-xl text-gray-500">
               Calendars are built for interupting people on a schedule.
               Distrubuted teams need to find time to work together while
-              respecting each others' need to focus.
+              respecting everyone's need to focus.
             </p>
           </div>
 
           <div className="relative mt-12 lg:mt-24 lg:grid lg:grid-cols-2 lg:gap-8 lg:items-center">
             <div className="relative">
               <h3 className="text-2xl font-extrabold text-gray-900 tracking-tight sm:text-3xl">
-                Transfer funds world-wide
+                Beat calendar tetris
               </h3>
               <p className="mt-3 text-lg text-gray-500">
-                Lorem ipsum dolor sit amet consectetur adipisicing elit.
-                Pariatur minima sequi recusandae, porro maiores officia
-                assumenda aliquam laborum ab aliquid veritatis impedit odit
-                adipisci optio iste blanditiis facere. Totam, velit.
+                Tasks with Friends prevents your day from becoming a mess of
+                minutes. You can invite several people, then when enough are
+                ready, get started right away. There is nothing special about
+                Tuesday at 3:30 EST. Why wait until tomorrow to have a
+                conversation if someone is ready right now?
               </p>
 
               <dl className="mt-10 space-y-10">
-                <Feature Icon={GlobeAltIcon} title="Pariatur minima sequi">
-                  Lorem ipsum, dolor sit amet consectetur adipisicing elit.
-                  Maiores impedit perferendis suscipit eaque, iste dolor
-                  cupiditate blanditiis ratione.
+                <Feature Icon={SparklesIcon} title="Create tasks">
+                  Need someone to give your work a second set of eyes? Want to
+                  brainstorm? Invite some of your friends to a task.
                 </Feature>
-                <Feature Icon={ScaleIcon} title="Totam, velit">
-                  Lorem ipsum, dolor sit amet consectetur adipisicing elit.
-                  Maiores impedit perferendis suscipit eaque, iste dolor
-                  cupiditate blanditiis ratione.
+                <Feature Icon={ClockIcon} title="Set expectations">
+                  Let participants know how many people are needed and how long
+                  you think the task will take. Invite 3 people and require 2.
+                  The task can start when you and one other (2 total) are ready.
                 </Feature>
-                <Feature
-                  Icon={LightningBoltIcon}
-                  title="Maiores impedit perferendis"
-                >
-                  Lorem ipsum, dolor sit amet consectetur adipisicing elit.
-                  Maiores impedit perferendis suscipit eaque, iste dolor
-                  cupiditate blanditiis ratione.
+                <Feature Icon={LightningBoltIcon} title="Ready, Set, Go!">
+                  Don’t wait for a calendar event to start. When enough people
+                  are ready to go, start the task! It’s a dead-simple way to
+                  focus as a group.
                 </Feature>
               </dl>
             </div>
@@ -252,7 +270,7 @@ export const Landing: React.VFC = () => {
                 />
               </svg>
               <img
-                className="relative mx-auto"
+                className="relative mx-auto rounded shadow-xl"
                 width={490}
                 src="/images/product-hero.png"
                 alt=""
@@ -366,8 +384,8 @@ export const Landing: React.VFC = () => {
                   />
                 </svg>
                 <img
-                  className="relative mx-auto"
-                  width={490}
+                  className="relative mx-auto drop-shadow-xl"
+                  width={350}
                   src="/images/focusing-mobile.png"
                   alt=""
                 />
