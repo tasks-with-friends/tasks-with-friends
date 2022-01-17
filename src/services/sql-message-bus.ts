@@ -193,6 +193,7 @@ export class SqlMessageBus implements MessageBus {
     this.taskStatus.clear();
     this.userStatus.clear();
     this.userCurrentTask.clear();
+    this.userAddedToTask.clear();
   }
 }
 
