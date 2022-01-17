@@ -421,13 +421,22 @@ export class SqlTaskService implements TaskService {
     }
 
     if (participants?.remove) {
-      await this.pool.query<DbParticipant>(
-        `DELETE FROM ONLY ${this.schema}.participants
+      const removedUserIds = (
+        await this.pool.query<{ user_external_id: string }>(
+          `DELETE FROM ONLY ${this.schema}.participants
           WHERE task_external_id = $1 AND user_external_id IN (${participants?.remove.map(
             (_, i) => `$${i + 2}`,
-          )})`,
-        [params.taskId, ...participants?.remove],
-      );
+          )})
+          RETURNING user_external_id`,
+          [params.taskId, ...participants?.remove],
+        )
+      ).rows.map((r) => r.user_external_id);
+
+      const data: Record<string, string> = {};
+      for (const userId of removedUserIds) {
+        data[userId] = params.taskId;
+      }
+      this.messages.onRemovedFromTask(data);
     }
 
     if (recalculate) {
