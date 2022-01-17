@@ -9,22 +9,30 @@ import { Profile } from './pages/profile';
 import { Tasks } from './pages/tasks/tasks';
 import { useProfileOrNull } from './profile-provider';
 import { EditTask } from './pages/tasks/edit-task';
+import { Landing } from './pages/landing';
 
 export const Router: React.VFC = () => {
   const profile = useProfileOrNull();
 
-  return (
+  return profile ? (
+    // Authenticated Routes
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={profile ? <App /> : <Login />} />
-        <Route path="/friends" element={profile ? <Friends /> : <Login />} />
-        <Route path="/tasks" element={profile ? <Tasks /> : <Login />} />
-        <Route path="/tasks/new" element={profile ? <NewTask /> : <Login />} />
-        <Route
-          path="/tasks/edit/:taskId"
-          element={profile ? <EditTask /> : <Login />}
-        />
-        <Route path="/profile" element={profile ? <Profile /> : <Login />} />
+        <Route path="/" element={<App />} />
+        <Route path="/login" element={<App />} />
+        <Route path="/friends" element={<Friends />} />
+        <Route path="/tasks" element={<Tasks />} />
+        <Route path="/tasks/new" element={<NewTask />} />
+        <Route path="/tasks/edit/:taskId" element={<EditTask />} />
+        <Route path="/settings" element={<Profile />} />
+        <Route path="/profile" element={<Profile />} />
+      </Routes>
+    </BrowserRouter>
+  ) : (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
       </Routes>
     </BrowserRouter>
   );
