@@ -73,7 +73,7 @@ const EditTaskGuts: React.VFC = () => {
         const input: EditTaskInput = { id: taskId, ...restOfTheDiff };
 
         const refetchQueries: InternalRefetchQueryDescriptor[] = [
-          { query: GET_TASK, variables: { id: taskId || '' } },
+          { query: GET_TASK, variables: { taskId: taskId || '' } },
         ];
 
         let awaitRefetchQueries = false;
