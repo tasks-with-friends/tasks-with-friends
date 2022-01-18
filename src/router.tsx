@@ -10,6 +10,7 @@ import { Tasks } from './pages/tasks/tasks';
 import { useProfileOrNull } from './profile-provider';
 import { EditTask } from './pages/tasks/edit-task';
 import { Landing } from './pages/landing';
+import { NavigationHandler } from './analytics';
 
 export const Router: React.VFC = () => {
   const profile = useProfileOrNull();
@@ -17,6 +18,7 @@ export const Router: React.VFC = () => {
   return profile ? (
     // Authenticated Routes
     <BrowserRouter>
+      <NavigationHandler />
       <Routes>
         <Route path="/" element={<App />} />
         <Route path="/login" element={<App />} />
@@ -30,6 +32,7 @@ export const Router: React.VFC = () => {
     </BrowserRouter>
   ) : (
     <BrowserRouter>
+      <NavigationHandler />
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
