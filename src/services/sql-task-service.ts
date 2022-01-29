@@ -434,7 +434,7 @@ export class SqlTaskService implements TaskService {
 
       const data: Record<string, string> = {};
       for (const userId of removedUserIds) {
-        data[userId] = params.taskId;
+        data[params.taskId] = userId;
       }
       this.messages.onRemovedFromTask(data);
     }
@@ -462,7 +462,7 @@ export class SqlTaskService implements TaskService {
 
     const data: Record<string, string> = {};
     for (const userId of removedUserIds) {
-      data[userId] = params.taskId;
+      data[params.taskId] = userId;
     }
     this.messages.onRemovedFromTask(data);
 
@@ -504,7 +504,7 @@ export class SqlTaskService implements TaskService {
 
     const data: Record<string, string> = {};
     for (const item of items) {
-      data[item.userId] = params.taskId;
+      data[params.taskId] = item.userId;
     }
     this.messages.onAddedToTask(data);
 
@@ -606,7 +606,7 @@ export class SqlTaskService implements TaskService {
 
     if (!deleted) throw new Error('Not Found');
 
-    this.messages.onAddedToTask({ [deleted.userId]: params.taskId });
+    this.messages.onAddedToTask({ [params.taskId]: deleted.userId });
 
     await this.statusCalculator.recalculateTaskStatus([params.taskId]);
 

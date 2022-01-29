@@ -75,24 +75,36 @@ export const RealTimeProvider: React.FC = ({ children }) => {
           taskStatus = {},
           userStatus = {},
           userCurrentTask = {},
-          addedToTask,
-          removedFromTask,
+          participantsAdded,
+          participantsRemoved,
         }) => {
-          if (addedToTask) {
-            clearTask(addedToTask);
-            push(addedToTask, 'need-response');
+          if (participantsAdded) {
+            for (const taskId of Object.keys(participantsAdded)) {
+              if (participantsAdded[taskId].includes(profile.id)) {
+                clearTask(taskId);
+                push(taskId, 'need-response');
+              }
+
+              // TODO: update cached task participant lists
+            }
           }
 
-          if (removedFromTask) {
-            clearTask(removedFromTask);
+          if (participantsRemoved) {
+            for (const taskId of Object.keys(participantsRemoved)) {
+              if (participantsRemoved[taskId].includes(profile.id)) {
+                clearTask(taskId);
 
-            client.cache.evict({
-              id: client.cache.identify({
-                __typename: 'Task',
-                id: removedFromTask,
-              }),
-            });
-            client.cache.gc();
+                client.cache.evict({
+                  id: client.cache.identify({
+                    __typename: 'Task',
+                    id: taskId,
+                  }),
+                });
+                client.cache.gc();
+              } else {
+                // TODO: update cached task participant lists
+              }
+            }
           }
 
           for (const taskId of Object.keys(taskStatus)) {
