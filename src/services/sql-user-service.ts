@@ -90,7 +90,7 @@ export class SqlUserService implements UserService {
       params.user;
     const newUser = (
       await this.pool.query<DbUser>(
-        `INSERT INTO ${this.schema}.users (name, email, avatar_url, provider, provider_user_id, refreshToken, status)
+        `INSERT INTO ${this.schema}.users (name, email, avatar_url, provider, provider_user_id, refresh_token, status)
       VALUES ($1, $2, $3, $4, $5, $6, 'away') RETURNING *`,
         [name, email, avatarUrl, provider, providerUserId, refreshToken],
       )
@@ -231,8 +231,33 @@ export class SqlUserService implements UserService {
     );
 
     const friend = await this.getUser({ userId: friendId });
-
     if (!friend) throw new Error('Not Found');
+
+    const removed = (
+      await this.pool.query<{
+        task_external_id: string;
+        user_external_id: string;
+      }>(
+        `DELETE FROM ONLY ${this.schema}.participants
+          WHERE id IN
+          
+          (SELECT p.id FROM ${this.schema}.participants p
+          JOIN ${this.schema}.tasks t ON p.task_external_id = t.external_id
+          WHERE (t.owner_external_id = $1 AND p.user_external_id = $2)
+          OR (t.owner_external_id = $2 AND p.user_external_id = $1))
+
+          RETURNING task_external_id, user_external_id
+          
+          `,
+        [userId, friendId],
+      )
+    ).rows;
+
+    for (const row of removed) {
+      this.messages.onRemovedFromTask({
+        [row.task_external_id]: row.user_external_id,
+      });
+    }
 
     return friend;
   }
