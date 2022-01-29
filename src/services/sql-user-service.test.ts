@@ -2,6 +2,7 @@ import { Pool } from 'pg';
 import { User, UserPage } from '../domain/v1/api.g';
 import { NullMessageBus } from './null-message-bus';
 import { SqlStatusCalculator } from './sql-status-calculator';
+import { TestUtility } from './sql-test-utility';
 import { SqlUserService } from './sql-user-service';
 import { StatusCalculator } from './status-calculator';
 
@@ -28,6 +29,7 @@ describe.skip('SqlUserService', () => {
     await pool.query(
       `DELETE FROM public.friends where 1=1;
       DELETE FROM public.participants where 1=1;
+      UPDATE public.users SET current_task_external_id = NULL;
       DELETE FROM public.tasks where 1=1;
       DELETE FROM public.invitations where 1=1;
       DELETE FROM public.users where 1=1;`,
@@ -552,6 +554,30 @@ describe.skip('SqlUserService', () => {
       });
       expect(mine.items).toEqual([]);
       expect(theirs.items).toEqual([]);
+    });
+
+    it('also removes participants', async () => {
+      // ARRANGE
+      const db = new TestUtility(pool, schema);
+      let [me, them] = await db.createUsers(2);
+      me = await db.as(me).setStatus('idle');
+      them = await db.as(them).setStatus('idle');
+      let t1 = await db.as(me).createTask({ groupSize: 2 });
+      await db.as(me).addParticipant(t1, them);
+      t1 = await db.as(me).getTask(t1.id);
+      let p = await db.as(me).getParticipants(t1);
+      expect(p.length).toEqual(2);
+      expect(p[0].userId).toEqual(me.id);
+      expect(p[1].userId).toEqual(them.id);
+
+      // ACT
+      await db.as(me).removeFriend(them);
+
+      // ASSERT
+      t1 = await db.as(me).getTask(t1.id);
+      p = await db.as(me).getParticipants(t1);
+      expect(p.length).toEqual(1);
+      expect(p[0].userId).toEqual(me.id);
     });
   });
 });
