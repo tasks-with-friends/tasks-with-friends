@@ -1,11 +1,13 @@
-import { Task, TaskStatus, UserStatus } from '../domain/v1/api.g';
+import { Task, TaskStatus, User, UserStatus } from '../domain/v1/api.g';
 
 export interface MessageBus {
-  onTaskStatusChanged(data: Record<string, TaskStatus>): void;
-  onUserStatusChanged(data: Record<string, UserStatus>): void;
-  onUserCurrentTaskChanged(data: Record<string, Task['id'] | null>): void;
-  onAddedToTask(data: Record<string, Task['id']>): void;
-  onRemovedFromTask(data: Record<string, Task['id']>): void;
+  onTaskStatusChanged(statusByTaskId: Record<Task['id'], TaskStatus>): void;
+  onUserStatusChanged(statusByUserId: Record<User['id'], UserStatus>): void;
+  onUserCurrentTaskChanged(
+    TaskIdByUserId: Record<User['id'], Task['id'] | null>,
+  ): void;
+  onAddedToTask(userIdByTaskId: Record<Task['id'], User['id']>): void;
+  onRemovedFromTask(userIdByTaskId: Record<Task['id'], User['id']>): void;
 
   drain(): Promise<void>;
 }

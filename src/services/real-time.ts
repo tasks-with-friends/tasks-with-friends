@@ -1,5 +1,5 @@
 import { Response } from 'node-fetch';
-import { Task, TaskStatus, UserStatus } from '../domain/v1/api.g';
+import { Task, TaskStatus, User, UserStatus } from '../domain/v1/api.g';
 
 export interface RealTime {
   trigger<EventName extends keyof EventMap>(
@@ -28,10 +28,10 @@ export type EventMap = {
     userIds: string[];
   };
   'multi-payload:v1': {
-    userStatus?: Record<string, UserStatus>;
-    taskStatus?: Record<string, TaskStatus>;
-    userCurrentTask?: Record<string, Task['id'] | null>;
-    addedToTask?: string;
-    removedFromTask?: string;
+    userStatus?: Record<User['id'], UserStatus>;
+    taskStatus?: Record<Task['id'], TaskStatus>;
+    userCurrentTask?: Record<User['id'], Task['id'] | null>;
+    participantsAdded?: Record<Task['id'], User['id'][]>;
+    participantsRemoved?: Record<Task['id'], User['id'][]>;
   };
 };

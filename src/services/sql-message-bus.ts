@@ -1,5 +1,5 @@
 import { Pool } from 'pg';
-import { Task, TaskStatus, UserStatus } from '../domain/v1/api.g';
+import { Task, TaskStatus, User, UserStatus } from '../domain/v1/api.g';
 import { MessageBus } from './message-bus';
 import { EventMap, RealTime } from './real-time';
 
@@ -13,8 +13,10 @@ export class SqlMessageBus implements MessageBus {
   private readonly taskStatus: Map<string, TaskStatus> = new Map();
   private readonly userStatus: Map<string, UserStatus> = new Map();
   private readonly userCurrentTask: Map<string, Task['id'] | null> = new Map();
-  private readonly userAddedToTask: Map<string, Task['id']> = new Map();
-  private readonly userRemovedFromTask: Map<string, Task['id']> = new Map();
+  private readonly userAddedByTask: Map<Task['id'], Set<User['id']>> =
+    new Map();
+  private readonly userRemovedByTask: Map<Task['id'], Set<User['id']>> =
+    new Map();
 
   onTaskStatusChanged(statusByTaskId: Record<string, TaskStatus>) {
     for (const taskId of Object.keys(statusByTaskId)) {
@@ -35,27 +37,59 @@ export class SqlMessageBus implements MessageBus {
       this.userCurrentTask.set(userId, taskByUserId[userId]);
     }
   }
-  onAddedToTask(taskByUserId: Record<string, Task['id']>): void {
-    for (const userId of Object.keys(taskByUserId)) {
-      this.userAddedToTask.set(userId, taskByUserId[userId]);
+  onAddedToTask(userIdByTaskId: Record<Task['id'], User['id']>): void {
+    for (const taskId of Object.keys(userIdByTaskId)) {
+      if (!this.userAddedByTask.has(taskId)) {
+        this.userAddedByTask.set(taskId, new Set());
+      }
+      this.userAddedByTask.get(taskId)!.add(userIdByTaskId[taskId]);
     }
   }
-  onRemovedFromTask(taskByUserId: Record<string, Task['id']>): void {
-    for (const userId of Object.keys(taskByUserId)) {
-      this.userRemovedFromTask.set(userId, taskByUserId[userId]);
+  onRemovedFromTask(userIdByTaskId: Record<Task['id'], User['id']>): void {
+    for (const taskId of Object.keys(userIdByTaskId)) {
+      if (!this.userRemovedByTask.has(taskId)) {
+        this.userRemovedByTask.set(taskId, new Set());
+      }
+      this.userRemovedByTask.get(taskId)!.add(userIdByTaskId[taskId]);
     }
   }
 
-  private async computeTaskMessages(): Promise<
-    Map<string, Map<string, TaskStatus>>
-  > {
+  private async computeTaskMessages(): Promise<{
+    status: Map<User['id'], Map<User['id'], TaskStatus>>;
+    participantAdded: Map<User['id'], Map<Task['id'], Set<User['id']>>>;
+    participantRemoved: Map<User['id'], Map<Task['id'], Set<User['id']>>>;
+  }> {
     const statusByTaskByRecipient: Map<
-      string,
-      Map<string, TaskStatus>
+      User['id'],
+      Map<User['id'], TaskStatus>
     > = new Map();
-    const taskIds = Array.from(this.taskStatus.keys());
-    if (!taskIds.length) return statusByTaskByRecipient;
 
+    const addedParticipantsByTaskByRecipent: Map<
+      User['id'],
+      Map<Task['id'], Set<User['id']>>
+    > = new Map();
+
+    const removedParticipantsByTaskByRecipent: Map<
+      User['id'],
+      Map<Task['id'], Set<User['id']>>
+    > = new Map();
+
+    const taskIds = Array.from(
+      new Set(
+        ...this.taskStatus.keys(),
+        ...this.userAddedByTask.keys(),
+        ...this.userRemovedByTask.keys(),
+      ),
+    );
+    if (!taskIds.length) {
+      return {
+        status: statusByTaskByRecipient,
+        participantAdded: addedParticipantsByTaskByRecipent,
+        participantRemoved: removedParticipantsByTaskByRecipent,
+      };
+    }
+
+    // gets a mapping of users who should be notified when task events occur
     const userTasks = (
       await this.pool.query<{
         user_external_id: string;
@@ -70,7 +104,7 @@ export class SqlMessageBus implements MessageBus {
       )
     ).rows;
 
-    const usersToUpdate = userTasks.reduce<Record<string, Set<string>>>(
+    const taskIdsByRecipientId = userTasks.reduce<Record<string, Set<string>>>(
       (acc, item) => {
         acc[item.user_external_id] ||= new Set();
         acc[item.user_external_id].add(item.task_external_id);
@@ -79,19 +113,47 @@ export class SqlMessageBus implements MessageBus {
       {},
     );
 
-    for (const userId of Object.keys(usersToUpdate)) {
-      const taskIdsForUser = usersToUpdate[userId];
-      if (taskIdsForUser.size) {
-        const x: Map<string, TaskStatus> = new Map();
-        for (const taskId of taskIdsForUser) {
-          const status = this.taskStatus.get(taskId);
+    for (const recipientId of Object.keys(taskIdsByRecipientId)) {
+      const taskIdsForRecipient = taskIdsByRecipientId[recipientId];
+      if (taskIdsForRecipient.size) {
+        const taskStatusByTaskId: Map<Task['id'], TaskStatus> = new Map();
+        const participantsAddedByTaskId: Map<
+          Task['id'],
+          Set<User['id']>
+        > = new Map();
 
-          if (status) x.set(taskId, status);
+        const participantsRemovedByTaskId: Map<
+          Task['id'],
+          Set<User['id']>
+        > = new Map();
+
+        for (const taskId of taskIdsForRecipient) {
+          const status = this.taskStatus.get(taskId);
+          const added = this.userAddedByTask.get(taskId);
+          const removed = this.userRemovedByTask.get(taskId);
+
+          if (status) taskStatusByTaskId.set(taskId, status);
+          if (added?.size) participantsAddedByTaskId.set(taskId, added);
+          if (removed?.size) participantsRemovedByTaskId.set(taskId, removed);
         }
-        statusByTaskByRecipient.set(userId, x);
+        if (taskStatusByTaskId.size) {
+          statusByTaskByRecipient.set(recipientId, taskStatusByTaskId);
+          addedParticipantsByTaskByRecipent.set(
+            recipientId,
+            participantsAddedByTaskId,
+          );
+          removedParticipantsByTaskByRecipent.set(
+            recipientId,
+            participantsRemovedByTaskId,
+          );
+        }
       }
     }
-    return statusByTaskByRecipient;
+    return {
+      status: statusByTaskByRecipient,
+      participantAdded: addedParticipantsByTaskByRecipent,
+      participantRemoved: removedParticipantsByTaskByRecipent,
+    };
   }
 
   private async computeUserMessages(): Promise<{
@@ -172,30 +234,37 @@ export class SqlMessageBus implements MessageBus {
     ]);
 
     const recipients: Set<string> = new Set([
-      ...taskMessages.keys(),
+      ...taskMessages.status.keys(),
+      ...taskMessages.participantAdded.keys(),
+      ...taskMessages.participantRemoved.keys(),
       ...userMessages.status.keys(),
       ...userMessages.currentTask.keys(),
-      ...this.userAddedToTask.keys(),
-      ...this.userRemovedFromTask.keys(),
     ]);
 
     for (const recipient of recipients) {
       const message: EventMap['multi-payload:v1'] = {};
 
-      const t = taskMessages.get(recipient);
-      if (t) message.taskStatus = toRecord(t);
+      const t = taskMessages.status.get(recipient);
+      if (t?.size) message.taskStatus = toRecord(t);
 
       const u = userMessages.status.get(recipient);
-      if (u) message.userStatus = toRecord(u);
+      if (u?.size) message.userStatus = toRecord(u);
 
       const c = userMessages.currentTask.get(recipient);
-      if (c) message.userCurrentTask = toRecord(c);
+      if (c?.size) message.userCurrentTask = toRecord(c);
 
-      const a = this.userAddedToTask.get(recipient);
-      if (a) message.addedToTask = a;
+      const a = taskMessages.participantAdded.get(recipient);
+      if (a?.size)
+        message.participantsAdded = mapRecord(a, (set: Set<string>) =>
+          Array.from(set),
+        );
 
-      const r = this.userRemovedFromTask.get(recipient);
-      if (r) message.removedFromTask = r;
+      const r = taskMessages.participantRemoved.get(recipient);
+      if (r?.size)
+        message.participantsRemoved = message.participantsRemoved = mapRecord(
+          r,
+          (set: Set<string>) => Array.from(set),
+        );
 
       await this.realTime.trigger(recipient, 'multi-payload:v1', message);
     }
@@ -203,8 +272,8 @@ export class SqlMessageBus implements MessageBus {
     this.taskStatus.clear();
     this.userStatus.clear();
     this.userCurrentTask.clear();
-    this.userAddedToTask.clear();
-    this.userRemovedFromTask.clear();
+    this.userAddedByTask.clear();
+    this.userRemovedByTask.clear();
   }
 }
 
@@ -213,6 +282,19 @@ function toRecord<T>(map: Map<string, T>): Record<string, T> {
 
   for (const [key, value] of map) {
     record[key] = value;
+  }
+
+  return record;
+}
+
+function mapRecord<T, U>(
+  map: Map<string, T>,
+  fn: (value: T) => U,
+): Record<string, U> {
+  const record: Record<string, U> = {};
+
+  for (const [key, value] of map) {
+    record[key] = fn(value);
   }
 
   return record;
