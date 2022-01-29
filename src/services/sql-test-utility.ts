@@ -86,6 +86,16 @@ export class UserScopedTestUtility {
   private readonly statusCalculator: StatusCalculator;
   private readonly taskService: TaskService;
 
+  async removeFriend(friend: User): Promise<User> {
+    return new SqlUserService(
+      this.pool,
+      this.schema,
+      this.statusCalculator,
+      new NullMessageBus(),
+      this.user.id,
+    ).removeFriendFromUser({ userId: this.user.id, friendId: friend.id });
+  }
+
   async setStatus(status: UserStatus): Promise<User> {
     return new SqlUserService(
       this.pool,
